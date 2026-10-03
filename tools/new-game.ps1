@@ -1,94 +1,50 @@
 param(
-    [Parameter(Mandatory=$true)]
-    [string]$GameName,
-
-    [Parameter(Mandatory=$true)]
-    [string]$PackageId,
-
-    [Parameter(Mandatory=$true)]
-    [string]$GameId,
-
-    [Parameter(Mandatory=$true)]
-    [string]$Title,
-
+    [Parameter(Mandatory=$true)][string]$GameName,
+    [Parameter(Mandatory=$true)][string]$PackageId,
+    [Parameter(Mandatory=$true)][string]$GameId,
+    [Parameter(Mandatory=$true)][string]$Title,
     [switch]$AnalogSticks,
-
-    [Parameter(Mandatory=$true)]
-    [string]$OutDir
+    [Parameter(Mandatory=$true)][string]$OutDir
 )
-
 $ErrorActionPreference = "Stop"
 
-$templateDir = Join-Path $PSScriptRoot "..\template\android"
-$outDir = Join-Path $PSScriptRoot "$OutDir"
+$template = (Resolve-Path (Join-Path $PSScriptRoot "..\template\android")).Path
+$dest = Join-Path ([IO.Path]::GetFullPath($OutDir)) "android"
+if ($dest.StartsWith($template, [StringComparison]::OrdinalIgnoreCase)) { throw "OutDir must not be inside the template" }
 
-# Step 1: Copy template\android to OutDir\android, skipping app\build, .cxx, .gradle
-$excludedDirs = @("app\build", "app\.cxx", "app\.gradle")
+New-Item -ItemType Directory -Force $dest | Out-Null
+robocopy $template $dest /E /R:1 /W:1 /XD build .cxx .gradle /XF local.properties /NFL /NDL /NJH /NJS | Out-Null
+if ($LASTEXITCODE -ge 8) { throw "robocopy failed ($LASTEXITCODE)" }
 
-function Get-ExcludedPaths {
-    param([string]$BasePath)
-    $results = @()
-    foreach ($ex in $excludedDirs) {
-        $path = Join-Path $BasePath "$ex"
-        if (Test-Path $path) {
-            $results += $path
-        }
+$old = [regex]::Escape("com.psxrecomp.tomba")
+$textExt = ".gradle", ".xml", ".properties", ".java", ".kts", ".txt"
+Get-ChildItem $dest -Recurse -File |
+    Where-Object { $textExt -contains $_.Extension -and $_.Name -ne "game.toml.in" } |
+    ForEach-Object {
+        $c = Get-Content $_.FullName -Raw
+        if ($c -match $old) { Set-Content $_.FullName ($c -replace $old, $PackageId) -NoNewline }
     }
-    return $results
+
+$values = Join-Path $dest "app\src\main\res\values"
+function Set-StringRes([string]$file, [string]$name, [string]$value) {
+    $c = Get-Content $file -Raw
+    $esc = [System.Security.SecurityElement]::Escape($value)
+    $pat = '(<string\s+name="' + [regex]::Escape($name) + '"[^>]*>)[^<]*(</string>)'
+    if ($c -notmatch $pat) { throw "string '$name' not found in $file" }
+    $new = [regex]::Replace($c, $pat, { param($m) $m.Groups[1].Value + $esc + $m.Groups[2].Value })
+    Set-Content $file $new -NoNewline
 }
+$strings = Join-Path $values "strings.xml"
+Set-StringRes $strings "app_name" $Title
+Set-StringRes $strings "psx_game_title" $Title
+Set-StringRes $strings "psx_game_id" $GameId
 
-$excludedPaths = Get-ExcludedPaths -BasePath $templateDir
+$bools = Join-Path $values "bools.xml"
+$b = Get-Content $bools -Raw
+$val = if ($AnalogSticks) { "true" } else { "false" }
+$pat = '(<bool\s+name="psx_analog_sticks"[^>]*>)\s*(true|false)\s*(</bool>)'
+if ($b -notmatch $pat) { throw "psx_analog_sticks not found in bools.xml" }
+Set-Content $bools ($b -replace $pat, ('${1}' + $val + '${3}')) -NoNewline
 
-Copy-Item -Path $templateDir -Destination $outDir -Recurse -Force -Exclude @($excludedPaths)
-
-# Step 2: Replace the old package id com.psxrecomp.tomba with -PackageId in every text file
-function Get-TextFiles {
-    param([string]$BasePath)
-    $results = @()
-    foreach ($dir in (Get-ChildItem -Path $BasePath -Directory -Recurse)) {
-        foreach ($file in (Get-ChildItem -Path $dir.FullName -Filter "*.txt" -Include "*.gradle", "*.xml")) {
-            # Skip files outside OutDir
-            if ($file.FullName -notlike "$outDir\*") {
-                continue
-            }
-            # Skip game.toml.in (handled by hand)
-            if ($file.Name -eq "game.toml.in") {
-                continue
-            }
-            $results += $file
-        }
-    }
-    return $results
-}
-
-$textFiles = Get-TextFiles -BasePath $outDir
-
-foreach ($file in $textFiles) {
-    $content = Get-Content -Path $file.FullName -Raw
-    $newContent = $content -replace 'com\.psxrecomp\.tomba', $PackageId
-    Set-Content -Path $file.FullName -Value $newContent -NoNewline
-}
-
-# Step 3: In app\src\main\res\values\strings.xml set app_name, psx_game_title and psx_game_id
-$stringsXml = Join-Path $outDir "app\src\main\res\values\strings.xml"
-if (Test-Path $stringsXml) {
-    $content = Get-Content -Path $stringsXml -Raw
-    $newContent = $content -replace '<string name="app_name">.*?</string>', "<string name=`"app_name`">$Title</string>"
-    $newContent = $newContent -replace '<string name="psx_game_title">.*?</string>', "<string name=`"psx_game_title`">$Title</string>"
-    $newContent = $newContent -replace '<string name="psx_game_id">.*?</string>', "<string name=`"psx_game_id`">$GameId</string>"
-    Set-Content -Path $stringsXml -Value $newContent -NoNewline
-}
-
-# Step 4: In bools.xml set psx_analog_sticks to true if -AnalogSticks is given, otherwise false
-$boolsXml = Join-Path $outDir "app\src\main\res\values\bools.xml"
-if (Test-Path $boolsXml) {
-    $content = Get-Content -Path $boolsXml -Raw
-    if ($AnalogSticks) {
-        $newContent = $content -replace '<bool name="psx_analog_sticks">false</bool>', "<bool name=`"psx_analog_sticks`">true</bool>"
-    } else {
-        $newContent = $content -replace '<bool name="psx_analog_sticks">true</bool>', "<bool name=`"psx_analog_sticks`">false</bool>"
-    }
-    Set-Content -Path $boolsXml -Value $newContent -NoNewline
-}
-
-Write-Host "New game '$GameName' created successfully in $outDir"
+Write-Host "Created $dest"
+exit 0
