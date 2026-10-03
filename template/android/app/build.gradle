@@ -1,0 +1,117 @@
+plugins {
+     id 'com.android.application'
+}
+
+def buildWithCMake = true
+def gameRoot = projectDir.parentFile.parentFile
+def generatedGameAssets = layout.buildDirectory.dir('generated/psxGameAssets')
+
+android {
+    namespace = "com.psxrecomp.tomba"
+    compileSdkVersion 35
+    ndkVersion = "28.2.13676358"
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 35
+        versionCode 1
+        versionName "0.1.0"
+        externalNativeBuild {
+            ndkBuild {
+                arguments "APP_PLATFORM=android-21"
+                // abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+                abiFilters 'arm64-v8a'
+            }
+            cmake {
+                arguments "-DANDROID_PLATFORM=android-21", "-DANDROID_STL=c++_static"
+                // Play build (gradle -PpsxPlayBuild): compile out the debug server
+                // and per-block diagnostic hooks for speed. The default build keeps
+                // them for adb debugging.
+                if (project.hasProperty('psxPlayBuild')) {
+                    arguments "-DPSX_DEBUG_TOOLS=OFF"
+                }
+                // abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+                abiFilters 'arm64-v8a'
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    applicationVariants.all { variant ->
+        tasks["merge${variant.name.capitalize()}Assets"]
+            .dependsOn("externalNativeBuild${variant.name.capitalize()}")
+    }
+    if (!project.hasProperty('EXCLUDE_NATIVE_LIBS')) {
+        sourceSets.main {
+            jniLibs.srcDir 'libs'
+        }
+        externalNativeBuild {
+            if (buildWithCMake) {
+                cmake {
+                    path '../../CMakeLists.txt'
+                    version "3.22.1"
+                }
+            } else {
+                ndkBuild {
+                    path 'jni/Android.mk'
+                }
+            }
+        }
+
+    }
+    sourceSets.main.assets.srcDir(generatedGameAssets)
+    // Shared psxrecomp Android code: start menu, game screen, on-screen pad.
+    sourceSets.main.java.srcDir(new File(gameRoot, 'psxrecomp/runtime/android/java'))
+    lint {
+        abortOnError = false
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+}
+
+tasks.register('stageGameAssets', Copy) {
+    from(new File(gameRoot, 'psxrecomp/bios/openbios.bin')) {
+        into 'bios'
+    }
+    from(new File(gameRoot, 'psxrecomp/bios/OpenBIOS.LICENSE')) {
+        into 'bios'
+    }
+    into generatedGameAssets
+}
+
+// Ahead-of-time compiled overlay shards (captured on the phone, compiled with
+// psxrecomp/tools/compile_overlays.py --target-os android). Shipped as assets
+// and installed into the runtime's overlay cache on launch, so a fresh install
+// runs overlay code natively without any play-time capture. Override the
+// source with -PpsxOverlayCache=<dir containing cg*_gc*_f* dirs>.
+def overlayCacheRoot = new File(project.findProperty('psxOverlayCache') ?:
+        new File(gameRoot, 'build-android-overlays/cache/SCUS-94236/gcc/linux-arm64').path)
+def generatedOverlayAssets = layout.buildDirectory.dir('generated/psxGameOverlays')
+
+tasks.register('stageGameOverlays', Sync) {
+    def hashHeader = new File(gameRoot, 'psxrecomp/runtime/include/overlay_codegen_hash.h')
+    def m = hashHeader.text =~ /PSX_OVERLAY_CODEGEN_HASH\s+0x([0-9a-fA-F]+)u/
+    def codegen = m.find() ? m.group(1).toLowerCase().padLeft(8, '0') : null
+    from(overlayCacheRoot) {
+        include "cg*_${codegen}_gc*_f*/*.so"
+        include "cg*_${codegen}_gc*_f*/*.ranges"
+        exclude '**/.*'
+    }
+    into generatedOverlayAssets.map { it.dir('overlays') }
+    doLast {
+        if (!overlayCacheRoot.isDirectory() || codegen == null)
+            logger.warn("No AOT overlay cache bundled (looked in ${overlayCacheRoot})")
+    }
+}
+
+android.sourceSets.main.assets.srcDir(generatedOverlayAssets)
+
+tasks.named('preBuild').configure {
+    dependsOn('stageGameAssets')
+    dependsOn('stageGameOverlays')
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The native diagnostics server binds only to 127.0.0.1. INTERNET is
+         required by Android for local TCP sockets; keep it debug-only. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

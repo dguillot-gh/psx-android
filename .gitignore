@@ -1,0 +1,8 @@
+keys.txt
+.aider*
+*.apk
+local.properties
+disc/
+saves/
+check.log
+msg.txt

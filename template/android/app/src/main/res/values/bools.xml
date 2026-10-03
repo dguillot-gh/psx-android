@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tomba ships as a digital-pad game ([controller] default_mode =
+         "digital"), so the on-screen pad shows no analog sticks. -->
+    <bool name="psx_analog_sticks">false</bool>
+</resources>
