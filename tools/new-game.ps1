@@ -19,7 +19,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$templateDir = Join-Path $PSScriptRoot "..\..\template\android"
+$templateDir = Join-Path $PSScriptRoot "..\template\android"
 $outDir = Join-Path $PSScriptRoot "$OutDir"
 
 # Step 1: Copy template\android to OutDir\android, skipping app\build, .cxx, .gradle
