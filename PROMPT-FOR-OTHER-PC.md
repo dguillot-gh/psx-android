@@ -57,6 +57,11 @@ What to expect while it runs:
 5. Before I unplug the USB drive: make sure go.ps1 has finished or was stopped as above, then use
    "Safely remove hardware". Never let me pull the drive while a build is running.
 
+A NEW game (only when I ask, e.g. "add FF7"): ask me for the path of every disc's .cue, then run
+   pwsh -File tools\new-recomp.ps1 -Name <short>_recomp -Disc "<disc 1 .cue>","<disc 2 .cue>",...
+and then pwsh -File go.ps1 -Game <short>_recomp -Speed. Show me its output. (START-HERE.md "A NEW game".)
+
 Never: write or edit .ps1 files, task cards, checks or fixtures; touch the recomps, framework or
-2026-10-03 folders, disc images or memory cards (*.mcd) yourself; run adb uninstall; create .bat or .cmd files.
+2026-10-03 folders, disc images or memory cards (*.mcd) yourself (the scripts may); run adb uninstall;
+create .bat or .cmd files; install Python or anything else on this PC.
 ```

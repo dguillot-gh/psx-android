@@ -76,6 +76,14 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
 - `phone.ps1 -Action play-test` launches a game, taps PLAY, and saves fps (SurfaceFlinger frame timing),
   screenshots and logcat into `<game>\phone-test\<date-time>\`.
 
+## New games from a disc: `tools\new-recomp.ps1 -Name <x>_recomp -Disc <cue1>,<cue2>,...` (since 2026-10-05)
+- Creates `recomps\<x>_recomp\` (disc\ with every cue + track file, game.toml, seeds\ghidra_funcs.txt,
+  catalog_identity.json, disc_probe.json, saves\) using the framework's
+  `psxrecomp\tools\new_project_layout\probe_disc.py` (extra discs via --extra-disc-list). Verified on Tomba 2: same
+  id/exe/load/entry/text size and 214 seeds as the hand-made recomp; the recompiler generates code from it.
+- `generated\` does not exist yet; go.ps1's REGEN step creates it. Then port/build as usual.
+- First boot of a brand-new game is Claude's job (seeds from runtime discovery, overlays, crashes).
+
 ## Multi-disc games (since 2026-10-05; framework code, not a tool task)
 - A game's `game.toml` lists its discs (`discs = [...]`); the app's `game.toml.in` has one `@@DISCn@@` line per disc.
 - The start menu (LauncherActivity) accepts several .cue files at once, numbers them by name in natural order,

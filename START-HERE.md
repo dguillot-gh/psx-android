@@ -82,6 +82,19 @@ On the phone, open the game, tap **Select game file**, open the side menu (top l
 (The picker's "Downloads" shortcut shows these folders as empty: files copied over USB/adb are not in Android's
 media index. "Pixel 8" reads the folders directly.) The app remembers the disc; next time just tap **Play**.
 
+## A NEW game from your own disc (e.g. FF7)
+1. Have the disc images (.cue + .bin for every disc; modified/patched images are fine) anywhere on the PC.
+2. Create the game (copies the discs onto the drive, reads the disc, writes the game's config; ~1 min):
+   ```powershell
+   pwsh -File tools\new-recomp.ps1 -Name ff7_recomp -Disc "C:\games\FF7\FF7 (Disc 1).cue","C:\games\FF7\FF7 (Disc 2).cue","C:\games\FF7\FF7 (Disc 3).cue"
+   ```
+   Name: lowercase, ends in `_recomp` (the app becomes `com.psxrecomp.ff7`). List the discs in order.
+3. Build it like the others: `pwsh -File go.ps1 -Game ff7_recomp` (from then on it is also part of `-Game all`).
+4. A brand-new game usually needs work before it plays right (missing code entry points, crashes, graphics):
+   that part is Claude's. Bring the drive after step 3 with whatever the phone shows.
+Optional: copy your DuckStation memory card for the game onto the drive too (DuckStation's `memcards` folder,
+a 128 KB .mcd file); the phone apps use the same format, Claude can load it onto the phone.
+
 ## Multi-disc games (since 2026-10-05)
 - Put every disc's .cue and .bin files in the game's disc folder: `..\android-recomp\<game>\disc\` (and in
   `..\recomps\<game>\disc\` for new ports). go.ps1 copies them all to the phone's `Download\<game>`.
