@@ -3,7 +3,7 @@
 #   pwsh -File tools\phone.ps1 -Action backup-saves -Package com.psxrecomp.tomba2
 #   pwsh -File tools\phone.ps1 -Action install -Package com.psxrecomp.tomba2 -Apk <path>   (backs up saves first)
 #   pwsh -File tools\phone.ps1 -Action launch -Package com.psxrecomp.tomba2
-#   pwsh -File tools\phone.ps1 -Action push-disc -Folder C:\recomp\tomba2_recomp\disc -Name tomba2_recomp
+#   pwsh -File tools\phone.ps1 -Action push-disc -Folder <drive>\recomp-backups\android-recomp\tomba2_recomp\disc -Name tomba2_recomp
 # -DryRun prints the adb commands ("ADB: ...") without running anything.
 param([string]$Action, [string]$Package, [string]$Apk, [string]$Folder, [string]$Name,
       [string]$OutDir = (Join-Path (Split-Path -Parent $PSScriptRoot) "saves-backup"),

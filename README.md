@@ -4,7 +4,8 @@ Small PowerShell tools that set up PS1 recomp games for Android, written by a lo
 No aider or other tools needed: just PowerShell 7, git and LM Studio.
 
 ## Quick start
-- `pwsh -File go.ps1 -Game all`: ports, regenerates and builds every remaining game into `C:\recomp`, unattended.
+- `pwsh -File go.ps1 -Game all`: ports, regenerates and builds every remaining game into `..\android-recomp` on the drive, unattended.
+  Watch it from a second window with `pwsh -File watch.ps1`.
 - Step-by-step walkthrough: `START-HERE.md`. Prompt for an assistant on another PC: `PROMPT-FOR-OTHER-PC.md`.
 - Hand-written tools (not model tasks): `tools\build.ps1` (Gradle build, finds Java and the SDK) and the per-game
   steps in `go.ps1`. The model-task tools 02-04 were filled in with tested versions so the pipeline runs today.
