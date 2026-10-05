@@ -3,6 +3,8 @@
 For you (the human): you don't paste this anywhere. Run `pwsh -File go.ps1` in this folder.
 It sends everything below the line to the model in LM Studio, together with CONTEXT.md and one task card at a time.
 Edit the text below the line to change how the model behaves.
+For an assistant operating this PC: your instructions are START-HERE.md and PROMPT-FOR-OTHER-PC.md.
+Run the scripts (`pwsh -File go.ps1 -Game all`); don't write or edit tools yourself.
 
 ---
 You write small PowerShell 7 scripts for a Windows project that sets up PS1 games as Android apps.

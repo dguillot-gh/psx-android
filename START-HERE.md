@@ -1,62 +1,56 @@
 # START HERE: step by step
 
-Do these in order. The drive letter may change (J: on the other PC); only the letter differs.
+The drive letter may change (J: on the other PC); only the letter differs.
+What this does: turns the PS1 recomp games in `..\recomps` into Android apps (APKs) for the phone, unattended.
 
 ## Once per PC
-1. Install, if missing: PowerShell 7 (`pwsh`), git, LM Studio. Nothing else is needed for the tasks.
-2. LM Studio: load **qwen3.5-9b**, set context length to 16k or more (32k better), and start the local server
-   (Developer tab, port 1234). No system prompt needed: the scripts send `AGENT.md`.
-   If replies come back cut off or full of reasoning, turn off "thinking" for the model.
-3. Test it: in PowerShell run `curl http://localhost:1234/v1/models`. You should see the model listed.
+1. Install, if missing:
+   - PowerShell 7 (`pwsh`) and git.
+   - Java 17: `winget install Microsoft.OpenJDK.17` (Android Studio's built-in Java also works).
+   - Android Studio. Open it once so it installs the Android SDK. Then go to Settings > Languages & Frameworks >
+     Android SDK > SDK Tools, tick "Show Package Details", and install **NDK 28.2.13676358** and **CMake 3.22.1**.
+   - Only for writing new tools with the local model: LM Studio with **qwen3.5-9b** loaded, context 16k or more,
+     local server on port 1234 (Developer tab). Not needed for porting or building.
+2. Check: `pwsh -File go.ps1 -Status` should list PASS for every task card.
 
-## Every session
-4. Open PowerShell in this folder:
+## Port and build every game (the main job)
+3. Open PowerShell in this folder and run:
    ```powershell
    cd J:\recomp-backups\psx-android-tools
-   git status          # should be clean; if not, commit or ask before continuing
+   pwsh -File go.ps1 -Game all
    ```
-5. Run it:
-   ```powershell
-   pwsh -File go.ps1               # does every unfinished task, in order
-   pwsh -File go.ps1 -Status       # just lists PASS / TODO
-   pwsh -File run.ps1 -Task 02     # just one task
-   ```
-   go.ps1 sends AGENT.md, CONTEXT.md and one task card at a time to LM Studio, saves the code the model writes,
-   runs that task's check, and repeats until it passes. Then it moves to the next task.
-   - `ALL TASKS PASS` means you're done; go to step 7.
-   - `STUCK`, `GAVE UP` or `MODEL NEEDS INFO` means it stopped. Look at the last reply in `logs\` and the FAIL lines.
-     Make the card smaller or clearer, or bring it to Claude.
-6. Each passing task is committed to git automatically. Every model reply is kept in `logs\`.
+   For each game in `..\recomps` (except Tomba, already done) it:
+   - copies the game into `C:\recomp\<game>`, with the newest framework from `..\framework`;
+   - creates its Android app (own package name, title and config);
+   - regenerates its C code with the new recompiler (the original stays in `generated.orig`);
+   - builds the APK into `C:\recomp\<game>\apk\`. The first build of each game takes about 30 minutes.
 
-## Task order (go.ps1 does these for you)
-| Card | What you get |
-|---|---|
-| 01 | `tools\new-game.ps1` (already written; go.ps1 just confirms it passes) |
-| 02 | `tools\make-game-toml-in.ps1` |
-| 03 | `tools\port-game.ps1` (uses 01 and 02) |
-| 04 | `tools\phone.ps1` |
+   It skips anything already done, so rerunning is always safe. It ends with a SUMMARY: one line per game.
+   - One game only: `pwsh -File go.ps1 -Game tomba2_recomp`
+   - Somewhere other than C:\recomp: add `-WorkDir D:\recomp`
+   - Port and regenerate without building: add `-SkipBuild`
 
-## After all four pass: port a game (Tomba 2 is the easiest next one)
-7. Pick a work folder outside the backups, for example `C:\recomp`:
+## Put a game on the phone
+4. Turn on wireless debugging on the phone (pair it once with `adb pair`), then:
    ```powershell
-   pwsh -File tools\port-game.ps1 -Name tomba2_recomp -SourceDir ..\recomps -Framework ..\2026-10-03\tomba_recomp\psxrecomp -OutRoot C:\recomp
-   ```
-8. Build (needs JDK 17 and the Android SDK with NDK 28.2.13676358 and CMake 3.22.1):
-   ```powershell
-   cd C:\recomp\tomba2_recomp\android
-   Set-Content local.properties "sdk.dir=C:/Users/<you>/AppData/Local/Android/Sdk"
-   .\gradlew.bat :app:assembleDebug        # first build takes about 30 minutes
-   ```
-9. Phone (wireless debugging on): back up saves and install, then launch:
-   ```powershell
-   cd J:\recomp-backups\psx-android-tools
    pwsh -File tools\phone.ps1 -Action devices
-   pwsh -File tools\phone.ps1 -Action install -Package com.psxrecomp.tomba2 -Apk C:\recomp\tomba2_recomp\android\app\build\outputs\apk\debug\app-debug.apk
+   pwsh -File tools\phone.ps1 -Action install -Package com.psxrecomp.tomba2 -Apk C:\recomp\tomba2_recomp\apk\<newest>.apk
    pwsh -File tools\phone.ps1 -Action launch -Package com.psxrecomp.tomba2
    ```
-   On the phone: Select game file, then pick the .cue and the .bin files together, then Play.
+   install always backs up the app's memory cards first (into `saves-backup\`). On the phone: tap Select game file,
+   pick the .cue and the .bin files together, then tap Play.
+   Package names: `com.psxrecomp.` + the folder name without `_recomp` and underscores
+   (tomba2, persona, persona2, parasiteeve, parasiteeve2).
 
-## Bring to Claude instead
-- Any change to C/C++ (`psxrecomp\runtime`, `psxrecomp\recompiler`) or Java (start menu, touch pad).
-- Multi-disc support (needed for both Parasite Eve games) and pre-compiling overlays for speed.
-- Graphics glitches, crashes, or the game running under 60 fps.
+## Notes per game
+- Tomba 2: the disc has two track files; select the .cue and both .bins together.
+- Parasite Eve 1 and 2: only Disc 1 is on the drive, so only Disc 1 plays for now (the menu takes one disc).
+
+## Bring to Claude
+- A FAIL in the summary that its log doesn't explain.
+- After the first boot on the phone: speed (pre-compiling the game's code), graphics glitches, crashes, controls.
+- Multi-disc support (Parasite Eve), and any change to C/C++ or Java code.
+
+## Writing new tools with the local model (optional)
+Task cards in `tasks\` describe tools for the local model to write. If any card's check fails, `go.ps1` runs it first
+(via `run.ps1` and LM Studio). All current cards already pass. See README.md to add new ones.

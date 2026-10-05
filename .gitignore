@@ -11,3 +11,5 @@ msg.txt
 !tests/fixtures/**/disc/
 !tests/fixtures/**/saves/
 logs/
+tmp/
+work/

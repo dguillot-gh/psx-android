@@ -17,7 +17,8 @@ This repo holds small PowerShell tools that set up each game's Android app. You 
 ## Folder layout (drive root = `<drive>:\recomp-backups`)
 ```
 recomps\<game>_recomp\          ORIGINAL games (read only): game.toml, generated\, seeds\, disc\, saves\, CMakeLists.txt
-2026-10-03\tomba_recomp\        newest WORKING game (framework, android app, overlays). Source of psxrecomp.
+framework\psxrecomp\            NEWEST framework (read only). Every port copies it.
+2026-10-03\tomba_recomp\        first finished Android game (snapshot, read only)
 2026-10-03\policenauts_recomp\  first game (older app, mouse controls)
 psx-android-tools\              THIS repo
   template\android\             Android app template (copied from Tomba; package com.psxrecomp.tomba)
