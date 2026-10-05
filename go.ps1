@@ -90,14 +90,16 @@ foreach ($g in $games) {
         if ($LASTEXITCODE -ne 0) { Say "FAIL: port-game.ps1"; $results += "$g : FAIL port-game.ps1"; continue }
     }
 
-    # Regenerate C code with this framework's recompiler (once; the original is kept in generated.orig)
+    # Regenerate C code with this framework's recompiler (the original is kept in generated.orig).
+    # Done once, and again whenever the recompiler is newer than the last regeneration
+    # (a recompiler fix only reaches a game through a regeneration).
     $marker = Join-Path $gameDir ".regenerated"
-    if (Test-Path $marker) {
+    $exe = Join-Path $gameDir "psxrecomp\recompiler\build-mingw\psxrecomp-game.exe"
+    if ((Test-Path $marker) -and (Get-Item $exe).LastWriteTime -le (Get-Item $marker).LastWriteTime) {
         Say "REGEN: already done"
     } else {
         $gen = Join-Path $gameDir "generated"; $orig = Join-Path $gameDir "generated.orig"
         if (-not (Test-Path $orig)) { robocopy $gen $orig /E /NFL /NDL /NJH /NJS | Out-Null }
-        $exe = Join-Path $gameDir "psxrecomp\recompiler\build-mingw\psxrecomp-game.exe"
         Say "REGEN: regenerating game code (log: $gameDir\regen.log)"
         Push-Location $gameDir
         & $exe --config game.toml *> (Join-Path $gameDir "regen.log")
@@ -112,6 +114,17 @@ foreach ($g in $games) {
             $result = "ok, but regen failed (original code used)"
         }
     }
+
+    # Oversized-file guard. Normal generated files are 1-2 MB. Empty areas of the game (runs of
+    # zeros) used to come out as one giant file that took hours and ran the PC out of memory
+    # (Parasite Eve, 2026-10-05). The recompiler now writes them as a short loop, so nothing here
+    # should be over 4 MB. If one is, the build still compiles it without optimisation (slower
+    # game code there, but it finishes); report it to Claude, it means a new recompiler case.
+    $big = @(Get-ChildItem (Join-Path $gameDir "generated") -Filter *.c -ErrorAction SilentlyContinue | Where-Object { $_.Length -gt 4MB })
+    foreach ($f in $big) {
+        Say ("WARNING: oversized generated file {0} ({1:N0} MB). Building anyway; tell Claude." -f $f.Name, ($f.Length / 1MB))
+    }
+    if ($big.Count) { $result += ", but $($big.Count) oversized generated file(s), tell Claude" }
 
     # Build, then keep a copy of the APK on the drive
     if ($SkipBuild) { $results += "$g : ported (build skipped)"; continue }

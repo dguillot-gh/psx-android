@@ -123,6 +123,20 @@ cache folder `cg10_<hash>_...` then changes, and **every overlay must be recompi
 current hash for both games is `ee27d7e5`. `config_loader.*`, `main.cpp`, `memcard.c` and the Java
 code are **not** in the hash.
 
+**Zero runs (fixed 2026-10-05, drive framework only).** A run of zero words in the EXE (an overlay
+load area reached by a `jal` before the overlay is installed) was emitted one statement per word:
+Parasite Eve's `func_8019234C` was 441 KB of zeros, a 20 MB shard with one 110k-statement function
+that ran a 16 GB PC out of memory even at -O0. `code_generator.cpp` now emits 64+ consecutive
+zero words with no other per-address emission as one C loop with the identical per-word effects
+(I-cache fetch at line starts, the nop's `psx_cyc_step`, `cosim_instr`). Result: PE 62 → 53 shards,
+Persona 2 46 → 26, nothing over ~2 MB in any of the six games. Codegen hash on the drive framework
+is now `d8b96482`; Tomba's and Policenauts' C: copies are still on `ee27d7e5` (syncing this change
+there means recompiling their AOT overlays). Recompiler rebuild: build dir
+`recomp-backups\tools-cache\recompiler-build` (Ninja + llvm-mingw, `CMAKE_CXX_FLAGS="-include cstdlib
+-include exception -include cstring"` for rabbitizer), then copy the exe into `framework\psxrecomp\
+recompiler\build-mingw\`. Outside a game folder the exe needs `--project-root <framework>`.
+Safety nets: runtime.cmake builds any shard > 4 MB at -O0 without LTO, and go.ps1 warns about it.
+
 ## 6. Overlays: ahead-of-time (AOT) compiled code
 
 PS1 games load code from disc at runtime ("overlays"). Without help they run on the dirty-RAM

@@ -57,3 +57,14 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
 - Saves on phone: `adb exec-out run-as <package> cat files/card1.mcd > card1.mcd` (same for card2). Back up BEFORE installing.
 - Launch: `adb shell monkey -p <package> -c android.intent.category.LAUNCHER 1`
 - Regenerate game C: `<game>\psxrecomp\recompiler\build-mingw\psxrecomp-game.exe --config game.toml` (run in `<game>`).
+  go.ps1 does this itself: once per game, and again whenever that exe is newer than `<game>\.regenerated`.
+  Outside a game folder (no `psxrecomp\` next to game.toml) add `--project-root <drive>:\recomp-backups\framework\psxrecomp`.
+
+## Known: oversized generated files (fixed 2026-10-05)
+- Normal `generated\*.c` files are 1-2 MB. A run of zero words in a game's EXE (an empty area where the game loads
+  more code later) used to be written out one line per word: Parasite Eve got a 20 MB file that took hours and ran
+  a 16 GB PC out of memory. The recompiler now writes such runs as one short C loop with the same behaviour.
+- Safety nets: go.ps1 prints `WARNING: oversized generated file <name>` for any file over 4 MB, and the build
+  compiles such a file without optimisation (runtime.cmake) so it still finishes.
+- That WARNING is never yours to fix: no tool may edit `generated\`, `psxrecomp\recompiler` or `runtime.cmake`.
+  Keep the line and report it; Claude fixes the recompiler.

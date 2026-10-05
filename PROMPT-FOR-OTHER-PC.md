@@ -28,8 +28,14 @@ What to expect while it runs:
     BUILD: still working, 12 min so far: 3 clang compiling, 410/429 files compiled
   As long as heartbeats keep coming, it is working. Do not stop it.
 - At the end of a build the heartbeat says "all N files compiled, linking": that last step can take several minutes.
-- Some games (Parasite Eve, Persona 2) contain a few very large generated files (4-20 MB). They are empty filler
-  areas of the game, and the build compiles them without optimisation on purpose so they don't take hours. Nothing to fix.
+- Generated C files are normally 1-2 MB each. Empty areas of a game used to come out as one giant file (up to 20 MB)
+  that took hours and ran the PC out of memory; the recompiler was fixed on 2026-10-05 and go.ps1 regenerates every
+  game with it automatically (also games regenerated before, whenever the recompiler is newer).
+  If progress.log ever shows "WARNING: oversized generated file", the build still continues (that file is compiled
+  without optimisation so it finishes). Don't try to fix it: tell me, and keep the line for Claude.
+- Memory: a build can use most of the PC's RAM. Close LM Studio, browsers and games while it runs. If the build
+  dies with no error and nothing more is written (no heartbeat, no FAIL line), the PC most likely ran out of memory:
+  close more programs and run the same command again; it resumes where it stopped.
 - Only if there has been NO heartbeat for 15 minutes, or every heartbeat for 30+ minutes shows the same
   "x/y files compiled" with no clang compiling: tell me. To stop safely, press Ctrl+C in the go.ps1 window and wait
   until no clang.exe is left in Task Manager. Running the same command again resumes.
