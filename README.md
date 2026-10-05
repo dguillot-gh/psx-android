@@ -2,6 +2,11 @@
 
 Small PowerShell tools that set up PS1 recomp games for Android, written by a local model one task at a time.
 
+## Quick start
+- Hands-off: `pwsh -File go.ps1` (runs every unfinished task card in order).
+- In a chat: tell the model **"Read AGENT.md and follow it."**
+- Full walkthrough: `START-HERE.md`.
+
 ## How it works
 - `tasks\NN-*.md`: one task card = one script to write. Short, exact, with a "DONE WHEN" line.
 - `tools\check-NN.ps1`: the judge. It runs the model's script on fake test data in `tests\fixtures` and prints

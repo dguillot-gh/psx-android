@@ -16,10 +16,13 @@ Do these in order. The drive letter may change (J: on the other PC); only the le
    cd J:\recomp-backups\psx-android-tools
    git status          # should be clean; if not, commit or ask before continuing
    ```
-5. Run the next unfinished task (see the table below):
+5. Run every unfinished task in order, hands-off:
    ```powershell
-   pwsh -File auto.ps1 -Task 01
+   pwsh -File go.ps1            # or: pwsh -File go.ps1 -Status   to just list PASS/TODO
    ```
+   Or, in a chat (aider or LM Studio), point the model at one file and say:
+   **"Read AGENT.md and follow it."**
+   One task at a time instead: `pwsh -File auto.ps1 -Task 01`.
    - `DONE: ... passed` means move on to the next number.
    - `STUCK` or `GAVE UP` means open `check.log`. Make the card smaller or clearer, or bring it to Claude.
 6. aider commits each attempt automatically. To see what it did: `git log --oneline -5`.
