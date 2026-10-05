@@ -171,6 +171,18 @@ foreach ($g in $games) {
     }
     if ($big.Count) { $result += ", but $($big.Count) oversized generated file(s), tell Claude" }
 
+    # Codegen hash header. Both the pre-compile and Gradle read psxrecomp\runtime\include\
+    # overlay_codegen_hash.h BEFORE the native build that normally writes it, so a freshly ported
+    # game (never built) had none and failed both (FF7, 2026-10-05). Write it now from the game's own
+    # framework sources (same value CMake computes); exit 2 = the recompiler binary is stale.
+    $hpy = Find-Python
+    if ($hpy) {
+        $hout = @(& $hpy tools\codegen_hash.py (Join-Path $gameDir "psxrecomp") --recompiler $exe 2>&1)
+        $hc = $LASTEXITCODE
+        if ($hc -eq 2) { Say "FAIL: $($hout -join ' ') (tell Claude)"; $results += "$g : FAIL stale recompiler binary (tell Claude)"; continue }
+        if ($hc -ne 0) { Say "WARNING: could not write the codegen hash header: $($hout -join ' ')" }
+    } else { Say "WARNING: no Python, codegen hash header not checked (run tools\setup.ps1)" }
+
     $pkg = "com.psxrecomp." + (($g -replace '_recomp$', '').ToLower() -replace '[^a-z0-9]', '')
 
     # App icon from the game's box art (once per game; keeps the default icon if none is found).
