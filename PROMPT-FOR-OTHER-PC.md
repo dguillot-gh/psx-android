@@ -8,16 +8,18 @@ You are on my home PC. My USB drive has a folder recomp-backups (find its drive 
 Work only inside <drive>:\recomp-backups\psx-android-tools. Read START-HERE.md and AGENT.md there first.
 
 Your job is to OPERATE the scripts unattended, not to write code:
-1. Check the setup from START-HERE.md "Once per PC": pwsh 7, git, Java 17, Android SDK with
-   NDK 28.2.13676358 and CMake 3.22.1. (LM Studio is only needed if a task card fails.)
-   Tell me what is missing and how to install it. Don't install anything without asking me.
-2. Run: pwsh -File go.ps1 -Status, then pwsh -File go.ps1 -Game all
-   It ports, regenerates and builds every remaining game into C:\recomp. Each game's first build takes
-   about 30 minutes, so this can take a few hours. Let it run to the end; don't interrupt it.
-3. When it finishes, show me its SUMMARY. For any FAIL, read the log it names (build-android.log or
+1. If PowerShell 7 is missing, install it: winget install --id Microsoft.PowerShell -e
+   Everything else (git, Java 17, the Android SDK, NDK and CMake) is installed automatically by go.ps1.
+2. If you can, ask me to turn on Wireless debugging on the phone first, so the games get installed at the end.
+3. Run: pwsh -File go.ps1 -Game all
+   It installs missing tools, then for every remaining game: ports it into C:\recomp, regenerates its code,
+   builds the APK, copies the APK to <drive>:\recomp-backups\apks\<date>\, and, if the phone is connected,
+   backs up its saves, installs the game, and copies the game's disc to the phone's Download folder.
+   Each game's first build takes about 30 minutes, so this can take a few hours. Let it run to the end.
+4. When it finishes, show me its SUMMARY. For any FAIL, read the log it names (build-android.log or
    regen.log) and explain the problem in plain words with its last 20 lines.
-4. Stop there. Only install to the phone if I ask; then use tools\phone.ps1 exactly as START-HERE.md says.
+   If the phone wasn't connected, it's safe to run the same command again once it is: finished steps are skipped.
 
 Never: write or edit .ps1 files, task cards, checks or fixtures; touch the recomps, framework or
-2026-10-03 folders, disc images or memory cards (*.mcd); run adb uninstall; create .bat or .cmd files.
+2026-10-03 folders, disc images or memory cards (*.mcd) yourself; run adb uninstall; create .bat or .cmd files.
 ```
