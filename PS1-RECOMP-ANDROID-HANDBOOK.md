@@ -136,6 +136,9 @@ there means recompiling their AOT overlays). Recompiler rebuild: build dir
 -include exception -include cstring"` for rabbitizer), then copy the exe into `framework\psxrecomp\
 recompiler\build-mingw\`. Outside a game folder the exe needs `--project-root <framework>`.
 Safety nets: runtime.cmake builds any shard > 4 MB at -O0 without LTO, and go.ps1 warns about it.
+A regeneration that changes the NUMBER of shards needs the shard glob to be re-run: runtime.cmake's
+GEN_FULL_GLOB uses `file(GLOB ... CONFIGURE_DEPENDS)` since 2026-10-05; before that an incremental build
+failed with "Recompiled game code is MISSING", listing the deleted shards.
 
 ## 6. Overlays: ahead-of-time (AOT) compiled code
 
