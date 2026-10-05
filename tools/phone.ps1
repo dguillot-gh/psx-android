@@ -122,7 +122,7 @@ switch ($Action) {
         if ($screen -match 'No game file selected') { Write-Host "$Package : no disc picked yet in the app. Pick it once on the phone (Select game file)."; exit 2 }
         # Operators only (-match/$Matches, -f): works in constrained PowerShell too.
         if ($screen -notmatch 'text="PLAY"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"') { Write-Host "FAIL: the start menu's PLAY button was not found (see $ui)"; exit 1 }
-        $x = ([int]$Matches[1] + [int]$Matches[3]) / 2; $y = ([int]$Matches[2] + [int]$Matches[4]) / 2
+        $x = [int](([int]$Matches[1] + [int]$Matches[3]) / 2); $y = [int](([int]$Matches[2] + [int]$Matches[4]) / 2)
         # Phone clock at the moment Play is pressed: the log is taken from here on.
         $since = ((& $Adb shell "date '+%m-%d %H:%M:%S.000'") -join "").Trim()
         $sinceArg = "`"$since`""   # quoted: Start-Process joins arguments with plain spaces
@@ -142,7 +142,8 @@ switch ($Action) {
                     if ($span -gt 0) { $f = [double]("{0:F1}" -f (($times.Count - 1) / $span)); $fps += $f; Write-Host ("  {0,3} s: {1} fps" -f $t, $f) }
                 }
             }
-            if ($t -ge 20 -and $shots -lt 3 -and ($t % 30) -lt 10) {
+            # Screenshots 10 s after Play, then every 30 s (3 at most): 18, 48, 78 s.
+            if ($shots -lt 3 -and (($t - 8) % 30) -eq 10) {
                 $shots++; Invoke-Adb @("exec-out", "screencap", "-p") (Join-Path $OutDir "screen-$shots.png") | Out-Null
             }
             Start-Sleep -Seconds 10; $t += 10
