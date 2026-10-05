@@ -82,9 +82,19 @@ On the phone, open the game, tap **Select game file**, open the side menu (top l
 (The picker's "Downloads" shortcut shows these folders as empty: files copied over USB/adb are not in Android's
 media index. "Pixel 8" reads the folders directly.) The app remembers the disc; next time just tap **Play**.
 
+## Multi-disc games (since 2026-10-05)
+- Put every disc's .cue and .bin files in the game's disc folder: `..\android-recomp\<game>\disc\` (and in
+  `..\recomps\<game>\disc\` for new ports). go.ps1 copies them all to the phone's `Download\<game>`.
+- On the phone: Select game file > select ALL the discs' .cue and .bin files together. The menu shows "N discs";
+  the game starts on Disc 1.
+- When the game asks for the next disc: tap the pad's menu button (top centre) > **Change disc** > pick the disc.
+  The game sees the PS1's lid open and close, exactly like swapping discs on a real console.
+- Saves are on the memory card, shared by all discs; save states are kept per disc.
+
 ## Notes per game
 - Tomba 2: the disc has two track files; select the .cue and both .bins together.
-- Parasite Eve 1 and 2: only Disc 1 is on the drive, so only Disc 1 plays for now (the menu takes one disc).
+- Parasite Eve 1 and 2: only Disc 1 is on the drive so far. Add Disc 2 (see Multi-disc games above) to play past
+  the disc change; the home PC has them under G:\ps1 ports\games to recomp\.
 - Package names: `com.psxrecomp.` + the folder name without `_recomp` and underscores
   (tomba2, persona, persona2, parasiteeve, parasiteeve2). Single phone steps: see `tools\phone.ps1`'s first lines.
 
@@ -92,7 +102,7 @@ media index. "Pixel 8" reads the folders directly.) The app remembers the disc; 
 - A FAIL in the summary that its log doesn't explain.
 - Games still slow after `-Speed`, graphics glitches, crashes, controls (the `phone-test` folders help).
 - Known open items (2026-10-05): Parasite Eve II has no sound; analog sticks (an ANALOG button on the pad);
-  multi-disc support (Parasite Eve); any change to C/C++ or Java code.
+  multi-disc support is written but not yet tested with a real disc change; any change to C/C++ or Java code.
 
 ## Writing new tools with the local model (optional)
 Task cards in `tasks\` describe tools for the local model to write. If any card's check fails, `go.ps1` runs it first

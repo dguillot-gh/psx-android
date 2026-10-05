@@ -177,6 +177,22 @@ at dispatch, so a mismatched shard is skipped, never run wrong. A shard can stil
    NuGet `python` package (3.12.10) in `tools-cache/python`. Persona 2 test: 7 captures -> 100 shards,
    0 failed, 3.5 min in one group.
 
+### Multi-disc (2026-10-05, framework on the drive + tomba_recomp copy; compiled, not yet run with a real swap)
+- Runtime: `cdrom_swap_disc(cue)` in cdrom.c = open the new image first (failure keeps the old disc),
+  stop read/CD-DA/XA, close the old handle, clear the sector ring, last sector, warm-route prediction and
+  SubQ replacements, then `debug_force_cd_reinsert()` (shell-open error IRQ, lid closes after
+  CDROM_LID_CLOSE_DELAY_CYCLES; the game re-reads TOC/ID itself). Nothing else tells the game.
+- main.cpp (Android): `g_disc_swap_paths` filled at boot next to cdrom_init from game_discs via
+  resolve_selected_disc + normalize_disc_path_for_launch (the booted disc keeps its mounted path, e.g. a
+  mod's patched image). JNI `PsxInput.nativeDiscCount/nativeCurrentDisc/nativeRequestDiscSwap`; the UI
+  thread only posts a number, `android_apply_disc_swap()` runs on the emulator thread in the per-frame hook
+  and also calls `savestate_set_disc_scope(n)`; OSD "Disc N inserted".
+- Java: PadOverlay toolbar "Change disc" (dialog lists discs, marks the one in the drive); LauncherActivity
+  accepts several .cue picks (natural name order; `fillDiscs` expands the @@DISC1@@ line into one line per
+  disc and drops the other placeholders). Verified: NDK `-fsyntax-only` of main.cpp/cdrom.c, javac of all
+  shared Java against android-35, unit run of fillDiscs/naturalCompare (FF7-style names, 1-3 discs, CRLF).
+- To verify on the phone: a set with every disc image (PE1/PE2 Disc 2 are only on the home PC's G:).
+
 ## 7. The shared Android layer (built for Tomba, meant for every game)
 
 Location: `psxrecomp/runtime/android/java/com/psxrecomp/android/`. The game app picks it up through

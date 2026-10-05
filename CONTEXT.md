@@ -76,6 +76,14 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
 - `phone.ps1 -Action play-test` launches a game, taps PLAY, and saves fps (SurfaceFlinger frame timing),
   screenshots and logcat into `<game>\phone-test\<date-time>\`.
 
+## Multi-disc games (since 2026-10-05; framework code, not a tool task)
+- A game's `game.toml` lists its discs (`discs = [...]`); the app's `game.toml.in` has one `@@DISCn@@` line per disc.
+- The start menu (LauncherActivity) accepts several .cue files at once, numbers them by name in natural order,
+  and writes one line per imported disc into files/game.toml (fillDiscs).
+- In game: pad menu button > "Change disc" (PadOverlay) > PsxInput.nativeRequestDiscSwap(n) > the runtime swaps
+  between frames with cdrom_swap_disc() (runtime/src/cdrom.c): tray open, new image, tray close.
+- Tools only need to put every disc's .cue/.bin into `<game>\disc\`; phone.ps1 push-disc copies them all.
+
 ## Known: oversized generated files (fixed 2026-10-05)
 - Normal `generated\*.c` files are 1-2 MB. A run of zero words in a game's EXE (an empty area where the game loads
   more code later) used to be written out one line per word: Parasite Eve got a 20 MB file that took hours and ran
