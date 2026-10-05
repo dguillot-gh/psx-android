@@ -84,14 +84,16 @@ media index. "Pixel 8" reads the folders directly.) The app remembers the disc; 
 
 ## A NEW game from your own disc (e.g. FF7)
 1. Have the disc images (.cue + .bin for every disc; modified/patched images are fine) anywhere on the PC.
-2. Create the game (copies the discs onto the drive, reads the disc, writes the game's config; ~1 min):
+2. ONE command does everything: creates the recomp from your discs (copies them onto the drive, reads the disc,
+   writes the game's config), generates its C code, pre-compiles, builds the Android app and installs it:
    ```powershell
-   pwsh -File tools\new-recomp.ps1 -Name ff7_recomp -Disc "C:\games\FF7\FF7 (Disc 1).cue","C:\games\FF7\FF7 (Disc 2).cue","C:\games\FF7\FF7 (Disc 3).cue"
+   pwsh -File go.ps1 -Game ff7_recomp -Disc "C:\games\FF7\FF7 (Disc 1).cue","C:\games\FF7\FF7 (Disc 2).cue","C:\games\FF7\FF7 (Disc 3).cue" -Speed
    ```
    Name: lowercase, ends in `_recomp` (the app becomes `com.psxrecomp.ff7`). List the discs in order.
-3. Build it like the others: `pwsh -File go.ps1 -Game ff7_recomp` (from then on it is also part of `-Game all`).
-4. A brand-new game usually needs work before it plays right (missing code entry points, crashes, graphics):
-   that part is Claude's. Bring the drive after step 3 with whatever the phone shows.
+   From then on it is a normal game: `-Game ff7_recomp` or part of `-Game all` (no `-Disc` needed again).
+   (Only the "create" part: `pwsh -File tools\new-recomp.ps1 -Name ff7_recomp -Disc ...`.)
+3. A brand-new game usually needs work before it plays right (missing code entry points, crashes, graphics):
+   that part is Claude's. Bring the drive after step 2 with whatever the phone shows.
 Optional: copy your DuckStation memory card for the game onto the drive too (DuckStation's `memcards` folder,
 a 128 KB .mcd file); the phone apps use the same format, Claude can load it onto the phone.
 

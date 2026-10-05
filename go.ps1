@@ -9,6 +9,9 @@
 #   pwsh -File go.ps1 -Game all -Speed           the FAST builds: pre-compile each game's overlay code
 #                                                (tools\speed.ps1), build the play version, install it,
 #                                                then open each game and record fps, screenshots and log
+#   pwsh -File go.ps1 -Game ff7_recomp -Disc "<disc 1 .cue>","<disc 2 .cue>" -Speed
+#                                                a NEW game with no recomp yet: creates it from your discs
+#                                                (tools\new-recomp.ps1), then everything above
 # Watch it from a second window:  pwsh -File watch.ps1
 # Stage 0: install missing tools onto the drive (tools\setup.ps1: Java 17, Android SDK/NDK/CMake, Python).
 # Stage 1: task cards in tasks\ (tools the local model writes, via run.ps1).
@@ -24,7 +27,8 @@ param(
     [switch]$NoPhone,
     [switch]$NoDiscPush,
     [switch]$Speed,
-    [int]$TestSeconds = 90
+    [int]$TestSeconds = 90,
+    [string[]]$Disc = @()
 )
 Set-Location $PSScriptRoot
 . (Join-Path $PSScriptRoot "tools\paths.ps1")
@@ -69,6 +73,19 @@ Say "TASKS: all pass"
 if (-not (Test-Path (Join-Path $framework "runtime\runtime.cmake"))) { Say "FAIL: framework missing at $framework"; exit 1 }
 
 # --- Stage 2: games ----------------------------------------------------------
+# A new game (no recomp yet): create it from the given discs first, then treat it like any other.
+if ($Disc.Count) {
+    if ($Game -eq "all") { Say "FAIL: -Disc needs -Game <name>_recomp (the new game's name)"; exit 1 }
+    if (Test-Path (Join-Path $recomps $Game)) {
+        Say "NEW GAME: $Game already exists in $recomps; using it (the -Disc files are not copied again)"
+    } else {
+        Say "NEW GAME: creating $Game from $($Disc.Count) disc(s) (copies the discs, reads the disc; about a minute)"
+        # In-process (&): a list of disc paths can't pass through "pwsh -File"; the script's exit code still lands in $LASTEXITCODE.
+        & (Join-Path $PSScriptRoot "tools\new-recomp.ps1") -Name $Game -Disc $Disc | Out-Host
+        if ($LASTEXITCODE -ne 0) { Say "FAIL: new-recomp.ps1 could not create $Game (see above)"; exit 1 }
+        Say "NEW GAME: $Game created in $recomps"
+    }
+}
 $games = if ($Game -eq "all") {
     Get-ChildItem $recomps -Directory | Where-Object { $_.Name -ne "tomba_recomp" } | ForEach-Object { $_.Name }
 } else { @($Game) }
