@@ -2,7 +2,8 @@
 #   pwsh -File tools\setup.ps1
 # Java 17: Microsoft's portable JDK zip, unpacked into <drive>\recomp-backups\tools-cache.
 # Android SDK: Google's command-line tools into tools-cache\android-sdk, licences accepted, then exactly
-# the NDK/CMake/platform versions the app uses. git is optional (only used to commit model work).
+# the NDK/CMake/platform versions the app uses. Python 3 (portable, for the overlay pre-compile)
+# into tools-cache\python. git is optional (only used to commit model work).
 # Safe to rerun: anything already there is left alone. Exit 0 = ready to build. Hand-written.
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "paths.ps1")
@@ -70,6 +71,22 @@ if (-not $need) {
     $still = $sdkPackages | Where-Object { -not (Test-Path (Join-Path $sdk ($_ -replace ";", "\"))) }
     if ($still) { $fail += "Android SDK: $($still -join ', ')" } else { Write-Host "OK   Android SDK: $sdk (installed)" }
 }
+
+# --- Python 3 (overlay pre-compile tools) -----------------------------------------
+# The official Windows Python as a NuGet package: a plain zip with tools\python.exe and the
+# standard library, no installer, nothing written outside the drive.
+$py = Find-Python
+if (-not $py) {
+    $ver = "3.12.10"
+    $nupkg = Join-Path $ToolsCache "python.zip"
+    Write-Host "Downloading Python $ver (about 15 MB)..."
+    Invoke-WebRequest "https://api.nuget.org/v3-flatcontainer/python/$ver/python.$ver.nupkg" -OutFile $nupkg -UseBasicParsing
+    if (Test-Path $PythonHome) { Remove-Item $PythonHome -Recurse -Force }
+    Expand-Archive $nupkg $PythonHome
+    Remove-Item $nupkg -Force
+    $py = Find-Python
+}
+if ($py) { Write-Host "OK   Python: $py" } else { $fail += "Python 3" }
 
 if ($fail.Count) { Write-Host "FAIL: still missing: $($fail -join '; ')"; exit 1 }
 Write-Host "SETUP OK"

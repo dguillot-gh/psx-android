@@ -27,6 +27,30 @@ function Find-Sdk {
         Where-Object { $_ -and (Test-Path (Join-Path $_ "platform-tools")) } | Select-Object -First 1
 }
 
+# Python 3 for the overlay pre-compile tools (standard library only). The portable copy on the
+# drive (tools\setup.ps1 installs it) wins; else a real python on PATH (not the Microsoft Store stub).
+$PythonHome = Join-Path $ToolsCache "python"
+function Find-Python {
+    $p = Join-Path $PythonHome "tools\python.exe"
+    if (Test-Path $p) { return $p }
+    foreach ($n in "python", "python3") {
+        $c = Get-Command $n -ErrorAction SilentlyContinue | Where-Object { $_.Source -notmatch 'WindowsApps' } | Select-Object -First 1
+        if ($c) { return $c.Source }
+    }
+    return $null
+}
+
+# The NDK's clang + sysroot that cross-compile overlay code for the phone (same NDK the app uses).
+$NdkVersion = "28.2.13676358"
+function Find-Ndk {
+    foreach ($sdk in @($SdkHome, $env:ANDROID_HOME, $env:ANDROID_SDK_ROOT, (Join-Path $env:LOCALAPPDATA "Android\Sdk"))) {
+        if (-not $sdk) { continue }
+        $tc = Join-Path $sdk "ndk\$NdkVersion\toolchains\llvm\prebuilt\windows-x86_64"
+        if (Test-Path (Join-Path $tc "bin\clang.exe")) { return $tc }
+    }
+    return $null
+}
+
 function Find-Adb {
     $sdk = Find-Sdk
     if ($sdk -and (Test-Path (Join-Path $sdk "platform-tools\adb.exe"))) { return Join-Path $sdk "platform-tools\adb.exe" }
