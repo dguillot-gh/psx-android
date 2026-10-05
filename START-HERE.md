@@ -136,7 +136,7 @@ PC's key to `..\tools-cache\debug.keystore` (only if it matches the games alread
 - FF7 Shinra Archaeology Cut (`ff7_recomp`): pick all 3 discs' .cue and .bin together once in the app. A reference
   FF7 recomp on the same framework is cloned in `..\reference\Final-Fantasy-VII` (see `..\recomps\ff7_recomp\REFERENCE.md`);
   only Claude uses it. Most of FF7's code is streamed modules: the first runs pre-compile what the disc finder and
-  your play sessions find, plus FF7's own extractor (`..ecompsf7_recomp	oolsoverlay_extract.py`):
+  your play sessions find, plus FF7's own extractor (`..ecompsf7_recomp	ools\overlay_extract.py`):
   field, battle, world map, menus and battle helpers pre-compiled from the discs without playing (1.9 MB of code).
 - Parasite Eve 1 and 2: only Disc 1 is on the drive so far. Add Disc 2 (see Multi-disc games above) to play past
   the disc change; the home PC has them under G:\ps1 ports\games to recomp\.
