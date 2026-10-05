@@ -133,6 +133,10 @@ PC's key to `..\tools-cache\debug.keystore` (only if it matches the games alread
 
 ## Notes per game
 - Tomba 2: the disc has two track files; select the .cue and both .bins together.
+- FF7 Shinra Archaeology Cut (`ff7_recomp`): pick all 3 discs' .cue and .bin together once in the app. A reference
+  FF7 recomp on the same framework is cloned in `..\reference\Final-Fantasy-VII` (see `..\recomps\ff7_recomp\REFERENCE.md`);
+  only Claude uses it. Most of FF7's code is streamed modules: the first runs pre-compile what the disc finder and
+  your play sessions find; a dedicated FF7 extractor is planned.
 - Parasite Eve 1 and 2: only Disc 1 is on the drive so far. Add Disc 2 (see Multi-disc games above) to play past
   the disc change; the home PC has them under G:\ps1 ports\games to recomp\.
 - Package names: `com.psxrecomp.` + the folder name without `_recomp` and underscores
