@@ -12,19 +12,26 @@ Work only inside <drive>:\recomp-backups\psx-android-tools. Read START-HERE.md a
 
 Your job is to OPERATE the scripts unattended, not to write code:
 1. If PowerShell 7 is missing, install it: winget install --id Microsoft.PowerShell -e
-   Everything else (Java 17, the Android SDK, NDK and CMake) is downloaded automatically by go.ps1,
-   onto the USB drive (recomp-backups\tools-cache), not onto this PC's C: drive.
-2. If you can, ask me to turn on Wireless debugging on the phone first, so the games get installed at the end.
-   If LM Studio has a model loaded, ask me to unload it: the build needs the PC's memory.
-3. Run: pwsh -File go.ps1 -Game all
-   It installs missing tools, then for every remaining game: ports it into <drive>:\recomp-backups\android-recomp,
-   regenerates its code, builds the APK, copies the APK to <drive>:\recomp-backups\apks\<date>\, and, if the phone
-   is connected, backs up its saves, installs the game, and copies the game's disc to the phone's Download folder.
-   It continues where it left off: games and files that already finished are skipped.
+   Everything else (Java 17, the Android SDK, NDK, CMake and Python 3) is downloaded automatically by go.ps1,
+   onto the USB drive (recomp-backups\tools-cache), not onto this PC's C: drive. This PC has no Python and
+   doesn't need one: the scripts use the portable copy on the drive. Never install Python on the PC.
+2. Ask me to turn on Wireless debugging on the phone first: the fast builds read what the phone recorded
+   and test each game on it at the end. If LM Studio has a model loaded, ask me to unload it: the build needs the memory.
+3. Run: pwsh -File go.ps1 -Game all -Speed
+   (the FAST builds; START-HERE.md "Fast builds" explains each step). For every game it: updates the game's
+   framework copy and regenerates its code when needed; pre-compiles the code the game loads from the disc while
+   it runs (found on the disc, plus what the phone recorded while I played), using all CPU cores; builds the fast
+   "play" version; copies the APK to <drive>:\recomp-backups\apks\<date>\. Then, on the phone: backs up saves,
+   installs each game, copies its disc, and test-runs it for 90 s (fps, screenshots, log in
+   android-recomp\<game>\phone-test\). Tell me not to use the phone during the test runs at the end.
+   It continues where it left off; it only recompiles when there is new code.
    I will watch it with watch.ps1 (and watch-compile.ps1) in other windows; you don't need to report progress while it runs.
 
 What to expect while it runs:
-- Each game's first build takes 30-60 minutes (longer for big games like Parasite Eve), so all five take a few hours.
+- Per game: pre-compiling takes a few minutes up to ~30 min (heartbeat "SPEED: still compiling, N min so far: x of y
+  groups finished, z pieces compiled"), then the play build 10-30 min (heartbeat "BUILD: still working ..."). All
+  five games take a few hours. "SPEED: nothing found yet" or "already pre-compiled" is normal, not an error.
+  Pieces reported as failed only stay slower; the build continues. Never try to fix them: they are Claude's job.
 - The build log (build-android.log) can stay silent for a long time while the C code compiles. That is normal.
 - Every minute the build prints a heartbeat line, also in progress.log:
     BUILD: still working, 12 min so far: 3 clang compiling, 410/429 files compiled
@@ -42,8 +49,10 @@ What to expect while it runs:
   "x/y files compiled" with no clang compiling: tell me. To stop safely, press Ctrl+C in the go.ps1 window and wait
   until no clang.exe is left in Task Manager. Running the same command again resumes.
 
-4. When it finishes, show me its SUMMARY. For any FAIL, read the log it names (build-android.log or
-   regen.log) and explain the problem in plain words with its last 20 lines.
+4. When it finishes, show me its SUMMARY, including each game's "test" line (its fps). For any FAIL, read the log
+   it names (build-android.log, regen.log, or the logs in build-android-overlays\par\) and explain the problem in
+   plain words with its last 20 lines. "test: not run, pick the disc once" means I must select that game's disc in
+   the app once (Select game file > side menu > Pixel 8 > Download > <game>); then run the same command again.
    If the phone wasn't connected, it's safe to run the same command again once it is: finished steps are skipped.
 5. Before I unplug the USB drive: make sure go.ps1 has finished or was stopped as above, then use
    "Safely remove hardware". Never let me pull the drive while a build is running.

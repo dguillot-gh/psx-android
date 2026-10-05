@@ -167,6 +167,15 @@ at dispatch, so a mismatched shard is skipped, never run wrong. A shard can stil
    shards matching the current codegen hash as APK assets. `-PpsxOverlayCache=<dir>` overrides the source.
 4. **Verify:** `overlay_loader_status` shows `dispatch_native` climbing and `last_msg` naming the
    loaded shard. Then compare screenshots of a scene with `overlay_native_off` and `on`.
+5. **Automated (2026-10-05): `go.ps1 -Speed`** on the drive does steps 1-3 for every game
+   (`tools/speed.ps1`), then the play build, install, and a 90 s phone test run (fps from
+   `dumpsys SurfaceFlinger --latency '<hex> SurfaceView[<pkg>/...](BLAST)#<n>'`, the exact name from
+   `--list`; screenshots; `logcat -d -T <time> --pid=<pid of <pkg>:game>`). Captures = extract_generic
+   (Tomba 2: 53 regions, Persona: 11; Persona 2, PE1, PE2: none, their code is packed differently)
+   merged with the phone's own `files/overlay_captures.json` (every app has `overlay_cache = true`;
+   capture is not gated by PSX_DEBUG_TOOLS, so play builds keep recording). Portable Python = the
+   NuGet `python` package (3.12.10) in `tools-cache/python`. Persona 2 test: 7 captures -> 100 shards,
+   0 failed, 3.5 min in one group.
 
 ## 7. The shared Android layer (built for Tomba, meant for every game)
 

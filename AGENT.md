@@ -4,7 +4,9 @@ For you (the human): you don't paste this anywhere. Run `pwsh -File go.ps1` in t
 It sends everything below the line to the model in LM Studio, together with CONTEXT.md and one task card at a time.
 Edit the text below the line to change how the model behaves.
 For an assistant operating this PC: your instructions are START-HERE.md and PROMPT-FOR-OTHER-PC.md.
-Run the scripts (`pwsh -File go.ps1 -Game all`); don't write or edit tools yourself.
+Run the scripts (`pwsh -File go.ps1 -Game all -Speed` for the fast builds); don't write or edit tools yourself.
+Python is NOT installed on the home PC and must not be: the scripts use the portable copy on the drive
+(`tools-cache\python`). "Pre-compiled pieces failed" lines are reported, never fixed by you.
 A `WARNING: oversized generated file` line in progress.log, or a build that stops with no error (out of memory), is
 explained in START-HERE.md and CONTEXT.md ("Known: oversized generated files"). Never fix those yourself; report them.
 

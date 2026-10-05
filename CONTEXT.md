@@ -60,6 +60,22 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
   go.ps1 does this itself: once per game, and again whenever that exe is newer than `<game>\.regenerated`.
   Outside a game folder (no `psxrecomp\` next to game.toml) add `--project-root <drive>:\recomp-backups\framework\psxrecomp`.
 
+## Fast builds: `go.ps1 -Speed` (since 2026-10-05)
+- Games load extra code ("overlays") from the disc at runtime; uncompiled, it runs on a slow interpreter.
+  `tools\speed.ps1` pre-compiles it into `<game>\build-android-overlays\cache\<game id>\gcc\linux-arm64\`,
+  which the play build (`build.ps1 -Play`) bundles into the APK.
+- Sources of that code: `disc_captures.json` (found on the disc by `psxrecomp\tools\aot_overlay_spike\extract_generic.py`;
+  works for Tomba 2 and Persona, finds nothing for Persona 2 / Parasite Eve 1+2) and `play_captures.json` (what the
+  phone recorded while the game was played: `files/overlay_captures.json`, pulled read-only by
+  `phone.ps1 -Action pull-captures`, accumulated across runs). More play = more pre-compiled code.
+- Python: portable, on the drive (`tools-cache\python\tools\python.exe`, found by `Find-Python` in paths.ps1).
+  The home PC has no Python of its own. `tools\captures.py` merges/splits captures (stdlib only).
+- The compiler is `psxrecomp\tools\compile_overlays.py --target-os android --cps` with the NDK's clang, one process per
+  group (`par\gNN.json`, one per CPU core). Shards are tagged with the codegen hash (`cg10_<hash>_...`); the app only
+  bundles shards whose hash matches its runtime, and the runtime CRC-checks every piece before running it.
+- `phone.ps1 -Action play-test` launches a game, taps PLAY, and saves fps (SurfaceFlinger frame timing),
+  screenshots and logcat into `<game>\phone-test\<date-time>\`.
+
 ## Known: oversized generated files (fixed 2026-10-05)
 - Normal `generated\*.c` files are 1-2 MB. A run of zero words in a game's EXE (an empty area where the game loads
   more code later) used to be written out one line per word: Parasite Eve got a 20 MB file that took hours and ran

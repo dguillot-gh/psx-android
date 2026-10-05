@@ -7,17 +7,20 @@ and installs them on the phone, unattended. Everything is written to the USB dri
 ## 1. Before you start
 - PowerShell 7 must be installed (`pwsh`). If it isn't: `winget install --id Microsoft.PowerShell -e`
 - Everything else is downloaded automatically on the first run, onto the drive (`..\tools-cache`):
-  Java 17 (portable), and the Android SDK with NDK 28.2.13676358 and CMake 3.22.1 (a few GB, from Google).
+  Java 17 (portable), the Android SDK with NDK 28.2.13676358 and CMake 3.22.1 (a few GB, from Google),
+  and Python 3 (portable, 15 MB; already on the drive since 2026-10-05). Nothing needs installing on the PC.
 - To have the games installed on the phone at the end: turn on Developer options > Wireless debugging on the phone,
   and pair it with this PC once (`adb pair <ip:port>` with the pairing code the phone shows).
   Without the phone the APKs are still built and copied to the drive.
 
 ## 2. Run it
-Window 1 (does the work):
+Window 1 (does the work). The FAST version (what you normally want now that every game boots):
 ```powershell
 cd J:\recomp-backups\psx-android-tools
-pwsh -File go.ps1 -Game all
+pwsh -File go.ps1 -Game all -Speed
 ```
+Without `-Speed` it makes the plain first builds (slower games, but with the debug server Claude uses).
+Details of `-Speed` are in "Fast builds" below.
 Window 2 (optional, shows progress and the live build log, refreshes every 5 s; Ctrl+C stops only the watcher):
 ```powershell
 pwsh -File J:\recomp-backups\psx-android-tools\watch.ps1
@@ -42,6 +45,23 @@ It ends with a SUMMARY: one line per game and per phone step. Every step is also
 - Don't touch the phone: add `-NoPhone`. Install but don't copy discs: add `-NoDiscPush`.
 - Port and regenerate only, no build: add `-SkipBuild`
 
+### Fast builds (`-Speed`)
+PS1 games load extra code from the disc while they run. Without help that code runs on a slow interpreter
+(laggy cutscenes, menus). `-Speed` pre-compiles it for the phone, per game:
+1. finds the code on the disc itself (seconds; works for Tomba 2 and Persona);
+2. adds the code the phone recorded while you played that game (read from the phone, never changes it). For
+   Persona 2 and both Parasite Eves this is the main source: **the more of a game you play, the more gets
+   pre-compiled on the next run.** Play new areas, then run `-Speed` again; it only recompiles when there is new code;
+3. compiles it on all CPU cores (a few minutes up to ~30 min per game; heartbeat `SPEED: still compiling ...`);
+4. builds the "play" version (no debug server, about 20% faster) with that code inside, and installs it
+   (saves backed up first, as always);
+5. opens the game on the phone, presses Play, and for 90 s records the frame rate, 3 screenshots and the game's
+   log into `..\android-recomp\<game>\phone-test\<date-time>\`. The SUMMARY shows each game's fps.
+   Don't touch the phone during this step. A game whose disc was never picked in the app is skipped (pick it once).
+Some pre-compiled pieces can fail to compile; those parts just stay on the interpreter (the summary says how many).
+Pre-compiled code is checked before it runs, so a bad piece is skipped, not run wrong; graphics glitches that only
+appear in the fast build are still possible: bring the screenshots to Claude.
+
 ### What to expect while it builds
 - 30-60 minutes per game the first time (more for Parasite Eve). Unload any model in LM Studio first: the build needs the memory.
 - The build log can stay silent for a long time while C code compiles. Every minute the build prints a heartbeat
@@ -57,8 +77,10 @@ It ends with a SUMMARY: one line per game and per phone step. Every step is also
   Never unplug the drive during a build; use "Safely remove hardware" after stopping.
 
 ## 3. Play
-On the phone, open the game, tap **Select game file**, go to `Download\<game>`, pick the .cue and the .bin
-file(s) together (long-press one, tap the others), then tap **Play**.
+On the phone, open the game, tap **Select game file**, open the side menu (top left) > **Pixel 8** > **Download** >
+`<game>`, pick the .cue and the .bin file(s) together (long-press one, tap the others), then **Select**, then **Play**.
+(The picker's "Downloads" shortcut shows these folders as empty: files copied over USB/adb are not in Android's
+media index. "Pixel 8" reads the folders directly.) The app remembers the disc; next time just tap **Play**.
 
 ## Notes per game
 - Tomba 2: the disc has two track files; select the .cue and both .bins together.
@@ -68,8 +90,9 @@ file(s) together (long-press one, tap the others), then tap **Play**.
 
 ## Bring to Claude
 - A FAIL in the summary that its log doesn't explain.
-- After the first boot on the phone: speed (pre-compiling the game's code), graphics glitches, crashes, controls.
-- Multi-disc support (Parasite Eve), and any change to C/C++ or Java code.
+- Games still slow after `-Speed`, graphics glitches, crashes, controls (the `phone-test` folders help).
+- Known open items (2026-10-05): Parasite Eve II has no sound; analog sticks (an ANALOG button on the pad);
+  multi-disc support (Parasite Eve); any change to C/C++ or Java code.
 
 ## Writing new tools with the local model (optional)
 Task cards in `tasks\` describe tools for the local model to write. If any card's check fails, `go.ps1` runs it first
