@@ -3,6 +3,7 @@
 # PS1 games load extra code from the disc while they run. Without this step that code runs on the
 # slow interpreter. Steps (everything under <GameDir>\build-android-overlays):
 #  1. disc_captures.json : code found on the disc itself (extract_generic.py, seconds, no playing).
+#     game_captures.json : the game's own extractor, if it has one (<GameDir>\tools\overlay_extract.py; FF7).
 #  2. play_captures.json : code the phone recorded while the game was played (pulled read-only,
 #     merged with earlier pulls). This is how games with unusual disc layouts get covered.
 #  3. aot_all.json       : both merged; split into one group per CPU core (par\gNN.json).
@@ -56,6 +57,20 @@ $code = $LASTEXITCODE
 Pop-Location
 if ($code -ne 0) { Say "SPEED: NOTE finding code on the disc failed (see $W\extract.log); using play captures only"; Remove-Item $disc -ErrorAction SilentlyContinue }
 
+# 1b. A game's OWN extractor, when it has one (<GameDir>\tools\overlay_extract.py, e.g. FF7's, which
+#     unpacks FF7's compressed modules and checks each one at its load address). Same interface:
+#     --game-toml game.toml --out <file> --framework psxrecomp.
+$gameX = Join-Path $GameDir "tools\overlay_extract.py"
+$gameCaps = Join-Path $W "game_captures.json"
+if (Test-Path $gameX) {
+    Push-Location $GameDir
+    & $py $gameX --game-toml game.toml --out $gameCaps --framework psxrecomp *> (Join-Path $W "game_extract.log")
+    $code = $LASTEXITCODE
+    Pop-Location
+    if ($code -eq 0) { Say ("SPEED: game extractor: " + ((Get-Content (Join-Path $W "game_extract.log") | Select-String 'module\(s\) kept' | Select-Object -Last 1).Line)) }
+    else { Say "SPEED: NOTE the game's own extractor failed (see $W\game_extract.log)"; Remove-Item $gameCaps -ErrorAction SilentlyContinue }
+}
+
 # 2. From play on the phone (read-only pull; merged with what earlier runs pulled).
 if (-not $NoPhone) {
     $new = Join-Path $W "play_new.json"
@@ -65,7 +80,7 @@ if (-not $NoPhone) {
 }
 
 # 3. Merge, and stop early when there is nothing new.
-& $py (Join-Path $tools "captures.py") merge --out $all $disc $play | Out-Host
+& $py (Join-Path $tools "captures.py") merge --out $all $disc $gameCaps $play | Out-Host
 $count = @(& $py -c "import json,sys; print(len(json.load(open(sys.argv[1]))))" $all)[0]
 $digest = @(& $py (Join-Path $tools "captures.py") digest $all)[0]
 $hash = (@(& $recompiler --codegen-hash) -join "").Trim()
