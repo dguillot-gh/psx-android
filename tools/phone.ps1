@@ -9,16 +9,9 @@ param([string]$Action, [string]$Package, [string]$Apk, [string]$Folder, [string]
       [string]$OutDir = (Join-Path (Split-Path -Parent $PSScriptRoot) "saves-backup"),
       [string]$Adb = "", [switch]$DryRun)
 
-# adb: the given path, else PATH, else the Android SDK's platform-tools.
-if (-not $Adb) {
-    $onPath = Get-Command adb -ErrorAction SilentlyContinue
-    if ($onPath) { $Adb = $onPath.Source }
-    else {
-        $sdk = @($env:ANDROID_HOME, $env:ANDROID_SDK_ROOT, (Join-Path $env:LOCALAPPDATA "Android\Sdk")) |
-            Where-Object { $_ -and (Test-Path (Join-Path $_ "platform-tools\adb.exe")) } | Select-Object -First 1
-        $Adb = if ($sdk) { Join-Path $sdk "platform-tools\adb.exe" } else { "adb" }
-    }
-}
+# adb: the given path, else the SDK's platform-tools (drive first), else PATH.
+. (Join-Path $PSScriptRoot "paths.ps1")
+if (-not $Adb) { $Adb = Find-Adb }
 $CardSize = 131072   # a PS1 memory card image is exactly 128 KB
 
 function Invoke-Adb([string[]]$a, [string]$To) {

@@ -2,34 +2,38 @@
 
 The drive letter may change (J: on the other PC); only the letter differs.
 What this does: turns the PS1 recomp games in `..\recomps` into Android apps (APKs), copies them to the drive,
-and installs them on the phone, unattended.
+and installs them on the phone, unattended. Everything is written to the USB drive, not the PC's C: drive.
 
 ## 1. Before you start
 - PowerShell 7 must be installed (`pwsh`). If it isn't: `winget install --id Microsoft.PowerShell -e`
-- Everything else is installed automatically on the first run: git and Java 17 (via winget), and the Android SDK
-  with NDK 28.2.13676358 and CMake 3.22.1 (downloaded from Google, a few GB).
+- Everything else is downloaded automatically on the first run, onto the drive (`..\tools-cache`):
+  Java 17 (portable), and the Android SDK with NDK 28.2.13676358 and CMake 3.22.1 (a few GB, from Google).
 - To have the games installed on the phone at the end: turn on Developer options > Wireless debugging on the phone,
   and pair it with this PC once (`adb pair <ip:port>` with the pairing code the phone shows).
   Without the phone the APKs are still built and copied to the drive.
 
 ## 2. Run it
+Window 1 (does the work):
 ```powershell
 cd J:\recomp-backups\psx-android-tools
 pwsh -File go.ps1 -Game all
 ```
-For each game in `..\recomps` (except Tomba, already done) it:
-- copies the game into `C:\recomp\<game>`, with the newest framework from `..\framework`;
+Window 2 (optional, shows progress and the live build log, refreshes every 5 s; Ctrl+C stops only the watcher):
+```powershell
+pwsh -File J:\recomp-backups\psx-android-tools\watch.ps1
+```
+For each game in `..\recomps` (except Tomba, already done) go.ps1:
+- copies the game into `..\android-recomp\<game>`, with the newest framework from `..\framework`;
 - creates its Android app (own package name, title and config);
 - regenerates its C code with the new recompiler (the original stays in `generated.orig`);
-- builds the APK into `C:\recomp\<game>\apk\`. The first build of each game takes about 30 minutes;
-- copies the APK to `..\apks\<date>\` on the drive;
+- builds the APK into `..\android-recomp\<game>\apk\`. The first build of each game takes about 30 minutes;
+- copies the APK to `..\apks\<date>\`;
 - if the phone is connected: backs up the app's memory cards, installs it, and copies the game's disc
   to the phone's `Download\<game>` folder.
 
 It skips anything already done, so rerunning is always safe (for example once the phone is connected).
-It ends with a SUMMARY: one line per game and per phone step.
+It ends with a SUMMARY: one line per game and per phone step. Every step is also in `progress.log`.
 - One game only: `pwsh -File go.ps1 -Game tomba2_recomp`
-- Somewhere other than C:\recomp: add `-WorkDir D:\recomp`
 - Don't touch the phone: add `-NoPhone`. Install but don't copy discs: add `-NoDiscPush`.
 - Port and regenerate only, no build: add `-SkipBuild`
 
