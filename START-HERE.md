@@ -37,6 +37,16 @@ It ends with a SUMMARY: one line per game and per phone step. Every step is also
 - Don't touch the phone: add `-NoPhone`. Install but don't copy discs: add `-NoDiscPush`.
 - Port and regenerate only, no build: add `-SkipBuild`
 
+### What to expect while it builds
+- 30-60 minutes per game the first time (more for Parasite Eve). Unload any model in LM Studio first: the build needs the memory.
+- The build log can stay silent for a long time while C code compiles. Every minute the build prints a heartbeat
+  (also in progress.log and the watcher), e.g. `BUILD: still working, 12 min so far: 3 clang compiling, 410/429 files compiled`.
+  As long as heartbeats keep coming, it's working. The last step says "linking" and can take several minutes.
+- Parasite Eve and Persona 2 have a few huge generated files (empty filler areas of the game). They are built without
+  optimisation on purpose, so they take minutes instead of hours.
+- To stop: Ctrl+C in the go.ps1 window, wait until no clang.exe is left in Task Manager. Rerunning resumes.
+  Never unplug the drive during a build; use "Safely remove hardware" after stopping.
+
 ## 3. Play
 On the phone, open the game, tap **Select game file**, go to `Download\<game>`, pick the .cue and the .bin
 file(s) together (long-press one, tap the others), then tap **Play**.

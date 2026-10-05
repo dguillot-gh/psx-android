@@ -80,7 +80,8 @@ foreach ($g in $games) {
 
     # Port (skipped if the folder exists)
     if (Test-Path $gameDir) {
-        Say "PORT: already in $gameDir"
+        Say "PORT: already in $gameDir (updating its framework copy with any newer fixes)"
+        robocopy $framework (Join-Path $gameDir "psxrecomp") /E /XD (Join-Path $framework "recompiler\build") /NFL /NDL /NJH /NJS | Out-Null
     } elseif (-not (Test-Path (Join-Path $recomps $g))) {
         Say "FAIL: no such game in $recomps"; $results += "$g : FAIL no such game in $recomps"; continue
     } else {
