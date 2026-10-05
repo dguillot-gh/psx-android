@@ -110,10 +110,23 @@ foreach ($g in $games) {
     $gameDir = Join-Path $WorkDir $g
     $result = "ok"
 
-    # Port (skipped if the folder exists)
+    # Port (skipped when an earlier port FINISHED). A port is finished when the Android app, the game's
+    # CMakeLists and the app config all exist (port-game.ps1 writes them last, after the big copy). A
+    # folder without them is an interrupted port (2026-10-05: FF7 was stopped mid-copy and the next run
+    # treated the half copy as done): it is moved aside, never deleted, and the game is ported again.
+    $ported = (Test-Path (Join-Path $gameDir "android\app\build.gradle")) -and
+              (Test-Path (Join-Path $gameDir "CMakeLists.txt")) -and
+              (Test-Path (Join-Path $gameDir "android\app\src\main\assets\game.toml.in"))
+    if ((Test-Path $gameDir) -and -not $ported) {
+        $aside = "$g.incomplete-" + (Get-Date -Format "yyyyMMdd-HHmmss")
+        Rename-Item $gameDir $aside
+        Say "PORT: $g was only partly copied earlier (interrupted); moved aside to $aside, porting again"
+    }
+    # overlay_codegen_hash.h is a BUILD OUTPUT (each game's build writes its own from its sources); a
+    # stale copy in the framework once overwrote every game's correct one and broke the pre-compile.
     if (Test-Path $gameDir) {
         Say "PORT: already in $gameDir (updating its framework copy with any newer fixes)"
-        robocopy $framework (Join-Path $gameDir "psxrecomp") /E /XD (Join-Path $framework "recompiler\build") /NFL /NDL /NJH /NJS | Out-Null
+        robocopy $framework (Join-Path $gameDir "psxrecomp") /E /XD (Join-Path $framework "recompiler\build") /XF overlay_codegen_hash.h /NFL /NDL /NJH /NJS | Out-Null
     } elseif (-not (Test-Path (Join-Path $recomps $g))) {
         Say "FAIL: no such game in $recomps"; $results += "$g : FAIL no such game in $recomps"; continue
     } else {
