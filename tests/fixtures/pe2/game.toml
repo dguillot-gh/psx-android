@@ -1,0 +1,63 @@
+# Autofilled by tools/new_project_layout/probe_disc.py from your legal dump.
+# Review before shipping. Runtime quirks / overlay seeds still need hand work.
+
+[game]
+name = "Parasite Eve II (USA, Canada) (Disc 1)"
+id = "SLUS-01042"
+players = 1
+exe = "disc/SLUS_010.42"
+discs = [
+  "disc/Parasite Eve II (USA, Canada) (Disc 1).cue",
+  "disc/Parasite Eve II (USA, Canada) (Disc 2).cue",
+]
+disc_serials = ["SLUS-01042", "SLUS-01055"]
+disc = "disc/Parasite Eve II (USA, Canada) (Disc 1).cue"
+load_address = "0x80010000"
+entry_pc = "0x80014358"
+text_size = "0x00059000"
+stack_base = "0x801FFFF0"
+
+# Digests are for data Track 01 (first BINARY FILE / TRACK 01).
+[prepare_disc]
+out_dir = "disc"
+bin_name = "Parasite Eve II (USA, Canada) (Disc 1).bin"
+cue_name = "Parasite Eve II (USA, Canada) (Disc 1).cue"
+boot_exe = "SLUS_010.42"
+discs = [
+  "G:/ps1 ports/games to recomp/parasite eve 2/Parasite Eve II (USA, Canada) (Disc 1).cue",
+  "G:/ps1 ports/games to recomp/parasite eve 2/Parasite Eve II (USA, Canada) (Disc 2).cue",
+]
+disc_serials = ["SLUS-01042", "SLUS-01055"]
+known_sizes = [588978432]
+known_md5 = [
+  "c2528bbcd164efad25c0aaccd8f6982b",
+]
+known_sha1 = [
+  "e8c7e3c93ea2a0e7d73a170af646fd132ac5b984",
+]
+known_crc32 = [
+  "4d6a9cbb",
+]
+
+[recompiler]
+seeds = "seeds/ghidra_funcs.txt"
+out_dir = "generated"
+strict = true
+
+[runtime]
+window_title = "Parasite Eve II (USA, Canada) (Disc 1) Recompiled"
+memcard_dir = "saves"
+
+[video]
+renderer = "opengl"
+aspect_ratio = "4:3"
+
+[controller]
+default_mode = "digital"
+
+# Online mount gate: digests + track count + optional TOC fingerprint
+# (see docs/NETPLAY.md).
+[netplay]
+require_cue = true
+required_tracks = 1
+required_disc_fp = "597e3c17ecab284a4cb5b9f263d312a63fd8ca330af77c6c0c2c612b1a77a53f"

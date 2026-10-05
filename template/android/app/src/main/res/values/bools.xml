@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tomba ships as a digital-pad game ([controller] default_mode =
-         "digital"), so the on-screen pad shows no analog sticks. -->
+    <!-- true if the game reads the analog sticks ([controller] default_mode =
+         "analog"); false for digital-pad games. Shows/hides the touch sticks. -->
     <bool name="psx_analog_sticks">false</bool>
 </resources>

@@ -6,3 +6,7 @@ disc/
 saves/
 check.log
 msg.txt
+
+# Test fixtures are fake and tiny; keep them even though they look like disc/saves.
+!tests/fixtures/**/disc/
+!tests/fixtures/**/saves/

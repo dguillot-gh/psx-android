@@ -1,0 +1,59 @@
+# Autofilled by tools/new_project_layout/probe_disc.py from your legal dump.
+# Review before shipping. Runtime quirks / overlay seeds still need hand work.
+
+[game]
+name = "Tomba!"
+id = "SCUS-94236"
+players = 1
+exe = "disc/SCUS_942.36"
+discs = [
+  "disc/Tomba! (USA).cue",
+]
+disc = "disc/Tomba! (USA).cue"
+load_address = "0x80010000"
+entry_pc = "0x8006B58C"
+text_size = "0x00088000"
+stack_base = "0x801FFFF0"
+
+# Digests are for data Track 01 (first BINARY FILE / TRACK 01).
+[prepare_disc]
+out_dir = "disc"
+bin_name = "Tomba! (USA).bin"
+cue_name = "Tomba! (USA).cue"
+boot_exe = "SCUS_942.36"
+discs = [
+  "G:/ps1 ports/games to recomp/Tomba! (USA) [SCUS-94236] Redump/Tomba! (USA).cue",
+]
+known_sizes = [280193760]
+known_md5 = [
+  "c80636a28de4abcfa34f9e57fb3b043d",
+]
+known_sha1 = [
+  "c259ec7ff6ef4163913991f4e4db2eff71702818",
+]
+known_crc32 = [
+  "b00ecb0d",
+]
+
+[recompiler]
+seeds = "seeds/ghidra_funcs.txt"
+out_dir = "generated"
+strict = true
+
+[runtime]
+window_title = "Tomba! Recompiled"
+memcard_dir = "saves"
+
+[video]
+renderer = "opengl"
+aspect_ratio = "4:3"
+
+[controller]
+default_mode = "digital"
+
+# Online mount gate: digests + track count + optional TOC fingerprint
+# (see docs/NETPLAY.md).
+[netplay]
+require_cue = true
+required_tracks = 1
+required_disc_fp = "84ce733697c16a6bddbd319504b1ee50a02f4c2a42f4eee049092a6da286a4b5"

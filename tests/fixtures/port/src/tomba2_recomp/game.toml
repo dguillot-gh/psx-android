@@ -1,0 +1,59 @@
+# Autofilled by tools/new_project_layout/probe_disc.py from your legal dump.
+# Review before shipping. Runtime quirks / overlay seeds still need hand work.
+
+[game]
+name = "Tomba! 2 - The Evil Swine Return"
+id = "SCUS-94454"
+players = 1
+exe = "disc/SCUS_944.54"
+discs = [
+  "disc/Tomba! 2 - The Evil Swine Return (USA).cue",
+]
+disc = "disc/Tomba! 2 - The Evil Swine Return (USA).cue"
+load_address = "0x80010000"
+entry_pc = "0x80018B6C"
+text_size = "0x00028800"
+stack_base = "0x801FFFF0"
+
+# Digests are for data Track 01 (first BINARY FILE / TRACK 01).
+[prepare_disc]
+out_dir = "disc"
+bin_name = "Tomba! 2 - The Evil Swine Return (USA) (Track 1).bin"
+cue_name = "Tomba! 2 - The Evil Swine Return (USA).cue"
+boot_exe = "SCUS_944.54"
+discs = [
+  "G:/ps1 ports/games to recomp/Tomba! 2 - The Evil Swine Return (USA)/Tomba! 2 - The Evil Swine Return (USA).cue",
+]
+known_sizes = [410480448]
+known_md5 = [
+  "63e774ac891ca718e19a88b42c72de06",
+]
+known_sha1 = [
+  "8ff38823fe4ac2e9ccfddffdb797271a63880052",
+]
+known_crc32 = [
+  "1fb8c151",
+]
+
+[recompiler]
+seeds = "seeds/ghidra_funcs.txt"
+out_dir = "generated"
+strict = true
+
+[runtime]
+window_title = "Tomba! 2 - The Evil Swine Return Recompiled"
+memcard_dir = "saves"
+
+[video]
+renderer = "opengl"
+aspect_ratio = "4:3"
+
+[controller]
+default_mode = "digital"
+
+# Online mount gate: digests + track count + optional TOC fingerprint
+# (see docs/NETPLAY.md).
+[netplay]
+require_cue = true
+required_tracks = 2
+required_disc_fp = "7caebce00ec324d45645d6849efc3cd9345af1f227db582e448656a817ae1c3a"

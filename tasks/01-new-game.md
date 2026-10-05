@@ -10,4 +10,4 @@ Parameters: -GameName, -PackageId, -GameId, -Title, -AnalogSticks (switch), -Out
 Do NOT change com.psxrecomp.android or org.libsdl.app. The template has no Java under com\psxrecomp, only org\libsdl\app.
 Never delete anything outside OutDir. Never touch disc, saves, or memory card files.
 Skip app\src\main\assets\game.toml.in. It is handled by hand.
-DONE WHEN tools\check.ps1 exits 0.
+DONE WHEN tools\check-01.ps1 exits 0.

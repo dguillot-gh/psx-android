@@ -89,8 +89,12 @@ tasks.register('stageGameAssets', Copy) {
 // and installed into the runtime's overlay cache on launch, so a fresh install
 // runs overlay code natively without any play-time capture. Override the
 // source with -PpsxOverlayCache=<dir containing cg*_gc*_f* dirs>.
+// The game id (cache folder name) comes from this app's own game.toml.in.
+def gameTomlIn = new File(projectDir, 'src/main/assets/game.toml.in').text
+def gameIdMatch = gameTomlIn =~ /(?m)^id\s*=\s*"([^"]+)"/
+def psxGameId = gameIdMatch.find() ? gameIdMatch.group(1) : 'UNKNOWN-GAME-ID'
 def overlayCacheRoot = new File(project.findProperty('psxOverlayCache') ?:
-        new File(gameRoot, 'build-android-overlays/cache/SCUS-94236/gcc/linux-arm64').path)
+        new File(gameRoot, "build-android-overlays/cache/${psxGameId}/gcc/linux-arm64").path)
 def generatedOverlayAssets = layout.buildDirectory.dir('generated/psxGameOverlays')
 
 tasks.register('stageGameOverlays', Sync) {
