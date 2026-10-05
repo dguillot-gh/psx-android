@@ -3,6 +3,8 @@
 Paste the text in the box into the assistant on the other PC (one that can run commands).
 No assistant? Do it yourself: follow START-HERE.md (it's one command).
 To watch progress yourself, open a second PowerShell window and run:  pwsh -File <drive>:\recomp-backups\psx-android-tools\watch.ps1
+Live compiler view (which file each clang compiles, CPU/RAM, then linker/Gradle), in a third window:
+  pwsh -File <drive>:\recomp-backups\psx-android-tools\watch-compile.ps1
 
 ```
 You are on my home PC. My USB drive has a folder recomp-backups (find its drive letter, e.g. J:).
@@ -19,7 +21,7 @@ Your job is to OPERATE the scripts unattended, not to write code:
    regenerates its code, builds the APK, copies the APK to <drive>:\recomp-backups\apks\<date>\, and, if the phone
    is connected, backs up its saves, installs the game, and copies the game's disc to the phone's Download folder.
    It continues where it left off: games and files that already finished are skipped.
-   I will watch it with watch.ps1 in another window; you don't need to report progress while it runs.
+   I will watch it with watch.ps1 (and watch-compile.ps1) in other windows; you don't need to report progress while it runs.
 
 What to expect while it runs:
 - Each game's first build takes 30-60 minutes (longer for big games like Parasite Eve), so all five take a few hours.

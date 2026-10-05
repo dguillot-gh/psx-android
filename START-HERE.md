@@ -22,6 +22,11 @@ Window 2 (optional, shows progress and the live build log, refreshes every 5 s; 
 ```powershell
 pwsh -File J:\recomp-backups\psx-android-tools\watch.ps1
 ```
+Window 3 (optional, scrolling live view: which C file each clang is compiling, its CPU and RAM, then the linker
+and Gradle; Ctrl+C stops only this window):
+```powershell
+pwsh -File J:\recomp-backups\psx-android-tools\watch-compile.ps1
+```
 For each game in `..\recomps` (except Tomba, already done) go.ps1:
 - copies the game into `..\android-recomp\<game>`, with the newest framework from `..\framework`;
 - creates its Android app (own package name, title and config);
