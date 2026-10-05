@@ -3,11 +3,10 @@
 Do these in order. The drive letter may change (J: on the other PC); only the letter differs.
 
 ## Once per PC
-1. Install, if missing: PowerShell 7 (`pwsh`), git, LM Studio, aider (`uv tool install aider-chat`).
-2. LM Studio: load **qwen3.5-9b**, then in its settings:
-   - System prompt: copy section 1 of `PROMPTS.md`.
-   - Context length: 16k or more (32k better). Temperature: 0.2.
-   - Start the local server (Developer tab), port 1234.
+1. Install, if missing: PowerShell 7 (`pwsh`), git, LM Studio. Nothing else is needed for the tasks.
+2. LM Studio: load **qwen3.5-9b**, set context length to 16k or more (32k better), and start the local server
+   (Developer tab, port 1234). No system prompt needed: the scripts send `AGENT.md`.
+   If replies come back cut off or full of reasoning, turn off "thinking" for the model.
 3. Test it: in PowerShell run `curl http://localhost:1234/v1/models`. You should see the model listed.
 
 ## Every session
@@ -16,24 +15,26 @@ Do these in order. The drive letter may change (J: on the other PC); only the le
    cd J:\recomp-backups\psx-android-tools
    git status          # should be clean; if not, commit or ask before continuing
    ```
-5. Run every unfinished task in order, hands-off:
+5. Run it:
    ```powershell
-   pwsh -File go.ps1            # or: pwsh -File go.ps1 -Status   to just list PASS/TODO
+   pwsh -File go.ps1               # does every unfinished task, in order
+   pwsh -File go.ps1 -Status       # just lists PASS / TODO
+   pwsh -File run.ps1 -Task 02     # just one task
    ```
-   Or, in a chat (aider or LM Studio), point the model at one file and say:
-   **"Read AGENT.md and follow it."**
-   One task at a time instead: `pwsh -File auto.ps1 -Task 01`.
-   - `DONE: ... passed` means move on to the next number.
-   - `STUCK` or `GAVE UP` means open `check.log`. Make the card smaller or clearer, or bring it to Claude.
-6. aider commits each attempt automatically. To see what it did: `git log --oneline -5`.
+   go.ps1 sends AGENT.md, CONTEXT.md and one task card at a time to LM Studio, saves the code the model writes,
+   runs that task's check, and repeats until it passes. Then it moves to the next task.
+   - `ALL TASKS PASS` means you're done; go to step 7.
+   - `STUCK`, `GAVE UP` or `MODEL NEEDS INFO` means it stopped. Look at the last reply in `logs\` and the FAIL lines.
+     Make the card smaller or clearer, or bring it to Claude.
+6. Each passing task is committed to git automatically. Every model reply is kept in `logs\`.
 
-## Task order
-| Run | What you get | How you know it worked |
-|---|---|---|
-| `-Task 01` | `tools\new-game.ps1` (already written; this just confirms it) | `DONE` |
-| `-Task 02` | `tools\make-game-toml-in.ps1` | `DONE` |
-| `-Task 03` | `tools\port-game.ps1` (needs 01 and 02) | `DONE` |
-| `-Task 04` | `tools\phone.ps1` | `DONE` |
+## Task order (go.ps1 does these for you)
+| Card | What you get |
+|---|---|
+| 01 | `tools\new-game.ps1` (already written; go.ps1 just confirms it passes) |
+| 02 | `tools\make-game-toml-in.ps1` |
+| 03 | `tools\port-game.ps1` (uses 01 and 02) |
+| 04 | `tools\phone.ps1` |
 
 ## After all four pass: port a game (Tomba 2 is the easiest next one)
 7. Pick a work folder outside the backups, for example `C:\recomp`:
