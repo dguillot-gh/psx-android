@@ -185,7 +185,6 @@ switch ($Action) {
         if (-not $gamePid) { $summary = "game process ended during the test; " + $summary }
         Set-Content (Join-Path $OutDir "summary.txt") $summary
         Write-Host "$Package : $summary. Screenshots and log in $OutDir"
-        Remove-Item $ui -ErrorAction SilentlyContinue
     }
     default { Write-Host "FAIL: unknown action '$Action'"; exit 1 }
 }
