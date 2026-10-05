@@ -8,10 +8,13 @@
 #       the overlay code the game saved while playing (files/overlay_captures.json); read-only
 #   pwsh -File tools\phone.ps1 -Action play-test -Package com.psxrecomp.tomba2 -OutDir <folder> [-Seconds 90]
 #       opens the game, presses Play, then records frame rate, screenshots and the game's log
+#   pwsh -File tools\phone.ps1 -Action import-card -Package com.psxrecomp.ff7 -Card <file.mcd> [-Slot 1] [-Overwrite]
+#       puts a memory card image (e.g. from DuckStation) into the app; never replaces one without -Overwrite
 # -DryRun prints the adb commands ("ADB: ...") without running anything.
 param([string]$Action, [string]$Package, [string]$Apk, [string]$Folder, [string]$Name, [string]$To,
       [string]$OutDir = (Join-Path (Split-Path -Parent $PSScriptRoot) "saves-backup"),
-      [int]$Seconds = 90, [string]$Adb = "", [switch]$DryRun)
+      [int]$Seconds = 90, [string]$Card = "", [int]$Slot = 1, [switch]$Overwrite,
+      [string]$Adb = "", [switch]$DryRun)
 
 # adb: the given path, else the SDK's platform-tools (drive first), else PATH.
 . (Join-Path $PSScriptRoot "paths.ps1")
@@ -100,6 +103,30 @@ switch ($Action) {
         Invoke-Adb @("shell", "monkey", "-p", $Package, "-c", "android.intent.category.LAUNCHER", "1")
     }
     "home" { Invoke-Adb @("shell", "input", "keyevent", "KEYCODE_HOME") }
+    "import-card" {
+        # Put a PS1 memory card image (e.g. DuckStation's <game>_1.mcd, same 128 KB format) into the app as
+        # card<Slot>.mcd. Never replaces an existing card: exit 2 if the phone already has one (a person
+        # decides that, with -Overwrite, which backs the old card up first). Verified byte-for-byte.
+        if (-not $Package -or -not $Card) { Write-Host "FAIL: -Package and -Card (the .mcd file) needed"; exit 1 }
+        if (-not (Test-Path -LiteralPath $Card) -or (Get-Item -LiteralPath $Card).Length -ne $CardSize) {
+            Write-Host "FAIL: $Card is not a 128 KB memory card image"; exit 1 }
+        if ($Slot -ne 1 -and $Slot -ne 2) { Write-Host "FAIL: -Slot is 1 or 2"; exit 1 }
+        $slot = $Slot
+        $dest = "files/card$slot.mcd"
+        & $Adb shell run-as $Package ls $dest *> $null
+        if ($LASTEXITCODE -eq 0) {
+            if (-not $Overwrite) { Write-Host "$Package already has card$slot.mcd: not replaced (rerun with -Overwrite to replace it; it is backed up first)"; exit 2 }
+            Backup
+        }
+        & $Adb shell run-as $Package mkdir -p files *> $null
+        Write-Host "ADB: exec-in run-as $Package sh -c 'cat > $dest' < $Card"
+        $p = Start-Process -FilePath $Adb -ArgumentList @("exec-in", "run-as", $Package, "sh", "-c", "'cat > $dest'") `
+            -RedirectStandardInput $Card -NoNewWindow -Wait -PassThru
+        $want = (Get-FileHash -LiteralPath $Card -Algorithm MD5).Hash.ToLower()
+        $have = ((& $Adb shell run-as $Package md5sum $dest) -split '\s+')[0]
+        if ($p.ExitCode -ne 0 -or $have -ne $want) { Write-Host "FAIL: the card on the phone does not match $Card"; exit 1 }
+        Write-Host "$Package : memory card imported as card$slot.mcd (checked)"
+    }
     "pull-captures" {
         # Read-only: copies the game's own record of code it loaded while playing. Exit 2 = none yet.
         if (-not $Package -or -not $To) { Write-Host "FAIL: -Package and -To needed"; exit 1 }

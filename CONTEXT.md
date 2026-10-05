@@ -84,6 +84,15 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
 - `generated\` does not exist yet; go.ps1's REGEN step creates it. Then port/build as usual.
 - First boot of a brand-new game is Claude's job (seeds from runtime discovery, overlays, crashes).
 
+## Since 2026-10-05 also
+- `RUN-ALL.ps1` = `go.ps1 -Game all -Speed`: the single unattended command.
+- Save states: pad menu "Save state" / "Load state" (PadOverlay) > PsxInput.nativeRequestState > the runtime's
+  savestate_request_save/load between frames; 12 slots, files in the app's files/openbios/state_*_slotNN.pst.
+- Icons: `tools\icon.ps1` (box art via fetch_boxart.py + `tools\MakeIcon.java`), run by go.ps1 once per game.
+- Memory card import: `<game>\memcard-import\*.mcd` goes into a fresh app (phone.ps1 import-card; never overwrites).
+- Signing: one key for all PCs in `tools-cache\debug.keystore` (setup.ps1 copies the home PC's; build.ps1 uses it).
+- Disc file names may contain [ ]: PowerShell treats them as wildcards, so scripts use -LiteralPath for them.
+
 ## Multi-disc games (since 2026-10-05; framework code, not a tool task)
 - A game's `game.toml` lists its discs (`discs = [...]`); the app's `game.toml.in` has one `@@DISCn@@` line per disc.
 - The start menu (LauncherActivity) accepts several .cue files at once, numbers them by name in natural order,

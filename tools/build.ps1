@@ -44,6 +44,18 @@ $wrapper = Join-Path $android "gradle\wrapper\gradle-wrapper.jar"
 # Push-Location is not needed: the job below starts in the android folder itself.
 $gradleArgs = @("-classpath", $wrapper, "org.gradle.wrapper.GradleWrapperMain", "--no-daemon", ":app:assembleDebug")
 if ($Play) { $gradleArgs += "-PpsxPlayBuild" }
+# One signing key for every PC: Android only installs an update signed with the same key as the
+# installed app. setup.ps1 puts the home PC's debug key (the one the installed games were first
+# built with) on the drive; sign with it here, whichever PC builds. Without it Gradle uses this
+# PC's own debug key, and the phone refuses the update (INSTALL_FAILED_UPDATE_INCOMPATIBLE).
+$sharedKey = Join-Path $ToolsCache "debug.keystore"
+if (Test-Path $sharedKey) {
+    $gradleArgs += @("-Pandroid.injected.signing.store.file=$sharedKey", "-Pandroid.injected.signing.store.password=android",
+                     "-Pandroid.injected.signing.key.alias=androiddebugkey", "-Pandroid.injected.signing.key.password=android")
+    Write-Host "Signing with the shared key on the drive ($sharedKey)"
+} else {
+    Write-Host "NOTE: no shared signing key on the drive yet (run tools\setup.ps1 on the home PC); using this PC's own key"
+}
 Write-Host "Building (the first build takes 30-60 minutes; later ones are much faster)..."
 $log = Join-Path $GameDir "build-android.log"
 $progress = Join-Path (Split-Path -Parent $PSScriptRoot) "progress.log"   # go.ps1's log, shown by watch.ps1

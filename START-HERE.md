@@ -13,14 +13,20 @@ and installs them on the phone, unattended. Everything is written to the USB dri
   and pair it with this PC once (`adb pair <ip:port>` with the pairing code the phone shows).
   Without the phone the APKs are still built and copied to the drive.
 
-## 2. Run it
-Window 1 (does the work). The FAST version (what you normally want now that every game boots):
+## 2. Run it: ONE command
+Window 1 (does all the work, every game, unattended):
 ```powershell
 cd J:\recomp-backups\psx-android-tools
-pwsh -File go.ps1 -Game all -Speed
+pwsh -File RUN-ALL.ps1
 ```
-Without `-Speed` it makes the plain first builds (slower games, but with the debug server Claude uses).
-Details of `-Speed` are in "Fast builds" below.
+Per game: recomp (generate the C code) > pre-compile the disc code > Android play build (box-art icon, on-screen
+pad, save states, Change disc) > APK copy on the drive > phone: back up saves, install, copy the discs, import a
+brought-along memory card > open the game and test it (fps, screenshots, log). It is `go.ps1 -Game all -Speed`.
+Ready on the drive as of 2026-10-05: Tomba 2, Persona, Persona 2, Parasite Eve, Parasite Eve II, and
+**FF7 Shinra Archaeology Cut** (`ff7_recomp`, all 3 discs, your DuckStation memory card in `memcard-import\`).
+FF7 is brand new: its first boot will likely need Claude (see "A NEW game").
+Plain first builds without the speed-ups (with the debug server Claude uses): `pwsh -File go.ps1 -Game all`.
+Details of the speed-ups are in "Fast builds" below.
 Window 2 (optional, shows progress and the live build log, refreshes every 5 s; Ctrl+C stops only the watcher):
 ```powershell
 pwsh -File J:\recomp-backups\psx-android-tools\watch.ps1
@@ -94,8 +100,27 @@ media index. "Pixel 8" reads the folders directly.) The app remembers the disc; 
    (Only the "create" part: `pwsh -File tools\new-recomp.ps1 -Name ff7_recomp -Disc ...`.)
 3. A brand-new game usually needs work before it plays right (missing code entry points, crashes, graphics):
    that part is Claude's. Bring the drive after step 2 with whatever the phone shows.
-Optional: copy your DuckStation memory card for the game onto the drive too (DuckStation's `memcards` folder,
-a 128 KB .mcd file); the phone apps use the same format, Claude can load it onto the phone.
+Memory card from DuckStation (same 128 KB .mcd format): put it in `..\recomps\<game>\memcard-import\` before the
+first run (or `..\android-recomp\<game>\memcard-import\` later). The run copies it into the app when the app has
+no card yet (right after the first install); it never replaces an existing card. To replace one on purpose:
+`pwsh -File tools\phone.ps1 -Action import-card -Package com.psxrecomp.<x> -Card <file.mcd> -Overwrite`
+(the old card is backed up to saves-backup\ first).
+
+## In the game: the pad's menu button (top centre)
+- First row (pad layout): Smaller, Bigger, Rename, Hide/Show, Opacity, Reset all.
+- Second row: **Save state**, **Load state** (12 slots, with the time each was saved; saving over a used slot and
+  loading both ask first), **Change disc** (multi-disc games), **Done**.
+- Save states are a convenience on top of the game's own memory-card saves, which stay the safe ones (and are the
+  ones that move to/from DuckStation). States are kept per disc.
+
+## App icons
+Each game's icon is its box art (downloaded once from libretro-thumbnails by `tools\icon.ps1`, which go.ps1 runs;
+the attribution is in `<game>\launcher_assets\img\BOXART_SOURCE.txt`). To use your own picture, put a square
+`boxart.png` there and run `pwsh -File tools\icon.ps1 -GameDir ..\android-recomp\<game> -Force`.
+
+## Signing (why updates install)
+Android only installs an update signed with the same key as the installed app. `tools\setup.ps1` copies the home
+PC's key to `..\tools-cache\debug.keystore` (only if it matches the games already built); every PC then signs with it.
 
 ## Multi-disc games (since 2026-10-05)
 - Put every disc's .cue and .bin files in the game's disc folder: `..\android-recomp\<game>\disc\` (and in
@@ -117,7 +142,8 @@ a 128 KB .mcd file); the phone apps use the same format, Claude can load it onto
 - A FAIL in the summary that its log doesn't explain.
 - Games still slow after `-Speed`, graphics glitches, crashes, controls (the `phone-test` folders help).
 - Known open items (2026-10-05): Parasite Eve II has no sound; analog sticks (an ANALOG button on the pad);
-  multi-disc support is written but not yet tested with a real disc change; any change to C/C++ or Java code.
+  Change disc is tested with a stand-in disc only (a real "insert disc 2" moment still to see); FF7's first boot;
+  any change to C/C++ or Java code.
 
 ## Writing new tools with the local model (optional)
 Task cards in `tasks\` describe tools for the local model to write. If any card's check fails, `go.ps1` runs it first

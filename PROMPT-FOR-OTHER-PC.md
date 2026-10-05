@@ -17,14 +17,17 @@ Your job is to OPERATE the scripts unattended, not to write code:
    doesn't need one: the scripts use the portable copy on the drive. Never install Python on the PC.
 2. Ask me to turn on Wireless debugging on the phone first: the fast builds read what the phone recorded
    and test each game on it at the end. If LM Studio has a model loaded, ask me to unload it: the build needs the memory.
-3. Run: pwsh -File go.ps1 -Game all -Speed
-   (the FAST builds; START-HERE.md "Fast builds" explains each step). For every game it: updates the game's
-   framework copy and regenerates its code when needed; pre-compiles the code the game loads from the disc while
-   it runs (found on the disc, plus what the phone recorded while I played), using all CPU cores; builds the fast
-   "play" version; copies the APK to <drive>:\recomp-backups\apks\<date>\. Then, on the phone: backs up saves,
-   installs each game, copies its disc, and test-runs it for 90 s (fps, screenshots, log in
-   android-recomp\<game>\phone-test\). Tell me not to use the phone during the test runs at the end.
+3. Run the one command: pwsh -File RUN-ALL.ps1
+   (= go.ps1 -Game all -Speed; START-HERE.md explains each step). For every game on the drive, including the new
+   FF7 (ff7_recomp, 3 discs, prepared 2026-10-05): regenerates its C code (recomp) when needed; pre-compiles the
+   code the game loads from the disc (found on the disc, plus what the phone recorded while I played), using all
+   CPU cores; builds the fast "play" version with its box-art icon, save states and Change disc; copies the APK to
+   <drive>:\recomp-backups\apks\<date>\. Then, on the phone: backs up saves, installs each game, copies its discs,
+   imports a brought-along memory card into a fresh app (FF7's DuckStation card), and test-runs each game for 90 s
+   (fps, screenshots, log in android-recomp\<game>\phone-test\). Tell me not to use the phone during those tests.
    It continues where it left off; it only recompiles when there is new code.
+   FF7 is brand new: its first build can take an hour and its first boot may fail or look wrong. That is expected;
+   report it, don't try to fix it.
    I will watch it with watch.ps1 (and watch-compile.ps1) in other windows; you don't need to report progress while it runs.
 
 What to expect while it runs:

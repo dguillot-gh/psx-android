@@ -88,6 +88,29 @@ if (-not $py) {
 }
 if ($py) { Write-Host "OK   Python: $py" } else { $fail += "Python 3" }
 
+# --- Shared signing key ------------------------------------------------------------
+# Android installs an update only when it is signed with the same key as the installed app, so every
+# PC must sign with ONE key. Use this PC's debug key (%USERPROFILE%\.android\debug.keystore) as the
+# shared one, but only if it is the key the APKs already on the drive (..\apks) were signed with, or
+# if there are none yet. A different PC's key is never copied over the phone's installed games.
+$sharedKey = Join-Path $ToolsCache "debug.keystore"
+$myKey = Join-Path $env:USERPROFILE ".android\debug.keystore"
+if (Test-Path $sharedKey) {
+    Write-Host "OK   shared signing key: $sharedKey"
+} elseif ((Test-Path $myKey) -and $java) {
+    $keytool = Join-Path (Split-Path $java) "keytool.exe"
+    $mine = ((& $keytool -list -v -keystore $myKey -storepass android -alias androiddebugkey 2>$null) |
+             Select-String 'SHA256:') -replace '.*SHA256:\s*', '' | Select-Object -First 1
+    $apk = Get-ChildItem (Join-Path $DriveRoot "apks") -Recurse -Filter *.apk -ErrorAction SilentlyContinue | Select-Object -First 1
+    $theirs = if ($apk) { ((& $keytool -printcert -jarfile $apk.FullName 2>$null) | Select-String 'SHA256:') -replace '.*SHA256:\s*', '' | Select-Object -First 1 } else { $null }
+    if (-not $apk -or ($mine -and $theirs -and $mine.Trim() -eq $theirs.Trim())) {
+        Copy-Item $myKey $sharedKey
+        Write-Host "OK   shared signing key: this PC's debug key, copied to $sharedKey"
+    } else {
+        Write-Host "NOTE this PC's signing key is not the one the phone's games were built with; not copied (builds here can't update them)"
+    }
+}
+
 if ($fail.Count) { Write-Host "FAIL: still missing: $($fail -join '; ')"; exit 1 }
 Write-Host "SETUP OK"
 exit 0

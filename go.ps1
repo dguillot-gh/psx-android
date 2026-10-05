@@ -160,6 +160,9 @@ foreach ($g in $games) {
 
     $pkg = "com.psxrecomp." + (($g -replace '_recomp$', '').ToLower() -replace '[^a-z0-9]', '')
 
+    # App icon from the game's box art (once per game; keeps the default icon if none is found).
+    pwsh -NoProfile -File tools\icon.ps1 -GameDir $gameDir | ForEach-Object { if ($_ -match '^icon: (box art|no box|FAIL)') { Say $_ } }
+
     # Build, then keep a copy of the APK on the drive
     if ($SkipBuild) { $results += "$g : ported (build skipped)"; continue }
     $buildArgs = @("-NoProfile", "-File", "tools\build.ps1", "-GameDir", $gameDir)
@@ -202,6 +205,15 @@ if ($built.Count -and -not $NoPhone) {
                 pwsh -NoProfile -File tools\phone.ps1 -Action push-disc -Folder (Join-Path (Join-Path $WorkDir $b.Game) "disc") -Name $b.Game
                 if ($LASTEXITCODE -eq 0) { $results += "phone : disc for $($b.Game) is in Download\$($b.Game) on the phone" }
                 else { Say "PHONE: FAILED copying the disc for $($b.Game)"; $results += "phone : FAIL copying the disc for $($b.Game) (see above)" }
+            }
+            # A memory card brought along for this game (e.g. from DuckStation) in <game>\memcard-import\:
+            # copied in only when the app has no card yet (a fresh install); never replaces one.
+            $mcd = Get-ChildItem (Join-Path (Join-Path $WorkDir $b.Game) "memcard-import") -Filter *.mcd -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -First 1
+            if ($mcd) {
+                pwsh -NoProfile -File tools\phone.ps1 -Action import-card -Package $b.Package -Card $mcd.FullName -Slot 1
+                if ($LASTEXITCODE -eq 0) { Say "PHONE: memory card $($mcd.Name) imported into $($b.Package)"; $results += "phone : $($b.Game) memory card imported ($($mcd.Name))" }
+                elseif ($LASTEXITCODE -eq 2) { $results += "phone : $($b.Game) already had a memory card; $($mcd.Name) NOT imported (ask Claude)" }
+                else { $results += "phone : FAIL importing the memory card for $($b.Game)" }
             }
             if (-not $Speed) { continue }
             # Test run: open the game, press Play, record fps + screenshots + the game's log.

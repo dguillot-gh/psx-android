@@ -193,6 +193,23 @@ at dispatch, so a mismatched shard is skipped, never run wrong. A shard can stil
   shared Java against android-35, unit run of fillDiscs/naturalCompare (FF7-style names, 1-3 discs, CRLF).
 - To verify on the phone: a set with every disc image (PE1/PE2 Disc 2 are only on the home PC's G:).
 
+### Save states, icons, signing, memory-card import (2026-10-05)
+- Save states: JNI `nativeStateSlots/nativeStateSlotTime/nativeRequestState`; the UI posts
+  (slot+1)*2+load in `g_android_state_request`, `android_apply_state_request()` calls
+  `savestate_request_save/load` on the emulator thread; savestate_poll does the work at a block boundary
+  (load needs the HLE scheduler, the default). Files: files/openbios/state_<entry>_disc<N>_slotNN.pst + .thumb.
+  The runtime's own toast reports "Saved/Loaded slot N". Verified on PE2: slot 1 written (713 KB + thumbnail).
+- PadOverlay toolbar is two rows (layout tools / Save state, Load state, Change disc, Done).
+- Icons: tools/icon.ps1 + tools/MakeIcon.java (crops the NTSC spine when the left 10% is dark, centre-square,
+  432 px into drawable-nodpi/ic_launcher_art.png; fg = inset 20dp, bg = average colour). fetch_boxart.py
+  misses "(USA, Canada)" discs: icon.ps1 also tries "(USA)". Quote "-Djava.awt.headless=true" in PowerShell.
+- Signing: debug APKs from different PCs carry different keys -> INSTALL_FAILED_UPDATE_INCOMPATIBLE. build.ps1
+  signs with tools-cache/debug.keystore via -Pandroid.injected.signing.* when present; setup.ps1 copies
+  %USERPROFILE%\.android\debug.keystore there only if its SHA-256 matches an APK already in ..\apks.
+  Home key SHA-256 24:C8:15:EA..., work PC key D1:59:67:7F... (work-PC builds can't update home installs).
+- phone.ps1 import-card: exec-in run-as <pkg> sh -c 'cat > files/cardN.mcd' + md5 check; refuses (exit 2)
+  when a card exists unless -Overwrite (which backs up first).
+
 ## 7. The shared Android layer (built for Tomba, meant for every game)
 
 Location: `psxrecomp/runtime/android/java/com/psxrecomp/android/`. The game app picks it up through

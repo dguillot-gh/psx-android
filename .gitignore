@@ -14,3 +14,7 @@ logs/
 tmp/
 work/
 progress.log
+
+# Memory-card and app-data backups stay on the drive, never in git.
+saves-backup/
+__pycache__/

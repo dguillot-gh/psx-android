@@ -11,6 +11,7 @@
 #     discs are fine), seeds\ghidra_funcs.txt (first list of code entry points) and the boot program;
 #  3. adds the sections the Android port expects if the probe did not write them ([runtime], [controller]).
 # The C code itself is generated later by go.ps1 (its REGEN step). Never overwrites an existing game.
+# Disc file names often contain [ ] (wildcards to PowerShell): every path here is used with -LiteralPath.
 param(
     [Parameter(Mandatory = $true)][string]$Name,
     [Parameter(Mandatory = $true)][string[]]$Disc,
@@ -27,21 +28,21 @@ if (Test-Path $dest) { Write-Host "FAIL: $dest already exists (pick another name
 # 1. Check every disc first (nothing is created if a file is missing), then copy.
 $copies = @()
 foreach ($cue in $Disc) {
-    if (-not (Test-Path $cue -PathType Leaf) -or $cue -notmatch '\.cue$') { Write-Host "FAIL: not a .cue file: $cue"; exit 1 }
+    if (-not (Test-Path -LiteralPath $cue -PathType Leaf) -or $cue -notmatch '\.cue$') { Write-Host "FAIL: not a .cue file: $cue"; exit 1 }
     $dir = Split-Path $cue -Parent
-    $copies += (Get-Item $cue).FullName
-    foreach ($line in Get-Content $cue) {
+    $copies += (Get-Item -LiteralPath $cue).FullName
+    foreach ($line in Get-Content -LiteralPath $cue) {
         if ($line -match '^\s*FILE\s+"([^"]+)"' -or $line -match '^\s*FILE\s+(\S+)') {
             $track = Join-Path $dir $Matches[1]
-            if (-not (Test-Path $track)) { Write-Host "FAIL: $cue needs $($Matches[1]), which is not next to it"; exit 1 }
-            $copies += (Get-Item $track).FullName
+            if (-not (Test-Path -LiteralPath $track)) { Write-Host "FAIL: $cue needs $($Matches[1]), which is not next to it"; exit 1 }
+            $copies += (Get-Item -LiteralPath $track).FullName
         }
     }
 }
 New-Item -ItemType Directory -Force (Join-Path $dest "disc"), (Join-Path $dest "seeds"), (Join-Path $dest "saves") | Out-Null
-$total = ($copies | ForEach-Object { (Get-Item $_).Length } | Measure-Object -Sum).Sum
+$total = ($copies | ForEach-Object { (Get-Item -LiteralPath $_).Length } | Measure-Object -Sum).Sum
 Write-Host ("Copying {0} file(s), {1:N0} MB, into {2}\disc ..." -f $copies.Count, ($total / 1MB), $dest)
-foreach ($f in $copies | Select-Object -Unique) { Copy-Item $f (Join-Path $dest "disc") }
+foreach ($f in $copies | Select-Object -Unique) { Copy-Item -LiteralPath $f (Join-Path $dest "disc") }
 
 # 2. Probe Disc 1 (paths relative to the game folder, as in every recomp's game.toml).
 $cues = @($Disc | ForEach-Object { "disc/" + (Split-Path $_ -Leaf) })
