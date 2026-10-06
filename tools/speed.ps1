@@ -9,13 +9,19 @@
 #  3. aot_all.json       : both merged; split into one group per CPU core (par\gNN.json).
 #  4. compile_overlays.py per group, in parallel, with the NDK's clang (minutes to ~30 min).
 #     Heartbeat every minute in progress.log.
+#     TIME LIMIT (-MaxMinutes, default 45): some games have one huge piece that takes hours
+#     (Tomba 2, 2026-10-05: one group ran 2+ hours and the run never reached the phone). At the
+#     limit the unfinished groups are stopped, everything finished so far is used, and the build
+#     goes on. Finished pieces are KEPT in par\out_gNN, so the next run carries on where this one
+#     stopped instead of starting over (compile_overlays skips pieces already built).
 #  5. cache\<game id>\gcc\linux-arm64\ : the result. The app build bundles it (build.ps1 -Play).
-# Skips the compile when the captures haven't changed since the last good compile.
-# Exit 0 = cache ready (or nothing to compile), 1 = failed.
+# Skips the compile when the captures haven't changed since the last COMPLETE compile.
+# Exit 0 = cache ready (or nothing to compile, or partial at the time limit), 1 = failed.
 param(
     [Parameter(Mandatory = $true)][string]$GameDir,
     [string]$Package = "",
     [int]$Groups = 0,
+    [int]$MaxMinutes = 45,
     [switch]$NoPhone
 )
 . (Join-Path $PSScriptRoot "paths.ps1")
@@ -101,7 +107,8 @@ Set-Content -Path $phoneToml -Value $lines -Encoding utf8NoBOM
 
 # 4. Compile, one process per group.
 $par = Join-Path $W "par"
-Get-ChildItem $par -Directory -Filter "out_g*" -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
+# out_gNN from an unfinished earlier run are kept on purpose: the same captures split the same way,
+# and compile_overlays reuses every piece already built there.
 & $py (Join-Path $tools "captures.py") split --in $all --groups $Groups --outdir $par | Out-Host
 $procs = @()
 foreach ($g in Get-ChildItem $par -Filter "g??.json" | Sort-Object Name) {
@@ -114,13 +121,24 @@ foreach ($g in Get-ChildItem $par -Filter "g??.json" | Sort-Object Name) {
     $procs += Start-Process -FilePath $py -ArgumentList $a -WorkingDirectory $GameDir -WindowStyle Hidden -PassThru `
         -RedirectStandardOutput (Join-Path $par "$n.log") -RedirectStandardError (Join-Path $par "$n.err.log")
 }
-Say "SPEED: compiling in $($procs.Count) parallel group(s) (minutes to about 30 min)"
+Say "SPEED: compiling in $($procs.Count) parallel group(s) (minutes to about 30 min, stops at $MaxMinutes min)"
 $started = Get-Date
+$timedOut = $false
 while (@($procs | Where-Object { -not $_.HasExited }).Count) {
     Start-Sleep -Seconds 60
     $left = @($procs | Where-Object { -not $_.HasExited }).Count
     $so = @(Get-ChildItem $par -Recurse -Filter *.so -ErrorAction SilentlyContinue).Count
-    Say ("SPEED: still compiling, {0} min so far: {1} of {2} groups finished, {3} pieces compiled" -f [int]((Get-Date) - $started).TotalMinutes, ($procs.Count - $left), $procs.Count, $so)
+    $mins = [int]((Get-Date) - $started).TotalMinutes
+    Say ("SPEED: still compiling, {0} min so far: {1} of {2} groups finished, {3} pieces compiled" -f $mins, ($procs.Count - $left), $procs.Count, $so)
+    if ($left -and $mins -ge $MaxMinutes) {
+        # Stop the unfinished groups with their clang children (/T). compile_overlays publishes each
+        # piece with a lock + journal, so a stop leaves no half piece that the merge below would take.
+        Say "SPEED: time limit ($MaxMinutes min) reached with $left group(s) still going; using what is finished, the next run continues"
+        foreach ($p in @($procs | Where-Object { -not $_.HasExited })) { taskkill /T /F /PID $p.Id 2>&1 | Out-Null }
+        Start-Sleep -Seconds 3
+        $timedOut = $true
+        break
+    }
 }
 $ok = 0; $bad = 0
 foreach ($l in Get-ChildItem $par -Filter "g??.log") {
@@ -132,12 +150,27 @@ foreach ($l in Get-ChildItem $par -Filter "g??.log") {
 # 5. Merge the groups into the cache the app build bundles (rebuilt fresh each time).
 if (Test-Path (Join-Path $W "cache\$gameId")) { Remove-Item (Join-Path $W "cache\$gameId") -Recurse -Force }
 New-Item -ItemType Directory -Force $cache | Out-Null
+# Only complete pieces (an .so with its .ranges and no unfinished publish journal) and only this
+# recompiler's codegen hash (kept out_gNN may also hold pieces from an older recompiler).
 foreach ($o in Get-ChildItem $par -Directory -Filter "out_g*") {
     $src = Join-Path $o.FullName "$gameId\gcc\linux-arm64"
-    if (Test-Path $src) { robocopy $src $cache /E /XF ".*" /NFL /NDL /NJH /NJS | Out-Null }
+    foreach ($d in Get-ChildItem $src -Directory -Filter "cg*_$($hash)_*" -ErrorAction SilentlyContinue) {
+        $dst = Join-Path $cache $d.Name
+        New-Item -ItemType Directory -Force $dst | Out-Null
+        foreach ($f in Get-ChildItem $d.FullName -Filter *.so) {
+            $r = $f.FullName.Substring(0, $f.FullName.Length - 3) + ".ranges"   # x.so -> x.ranges
+            if ($f.Name.StartsWith(".") -or -not (Test-Path $r) -or (Test-Path "$($f.FullName).pair-txn.json")) { continue }
+            Copy-Item $f.FullName, $r $dst -Force
+        }
+    }
 }
 $so = @(Get-ChildItem $cache -Recurse -Filter *.so).Count
 if ($so -eq 0) { Say "SPEED: FAIL nothing compiled ($bad failed; logs in $par)"; exit 1 }
+if ($timedOut) {
+    # No stamp: the next run compiles again, skipping the finished pieces kept in par\out_gNN.
+    Say "SPEED: partly done, $so compiled pieces ready; rerun to finish the rest (it resumes)"
+    exit 0
+}
 Set-Content $stamp "$digest $hash"
 Get-ChildItem $par -Directory -Filter "out_g*" | Remove-Item -Recurse -Force   # scratch, ~1-2 GB
 $note = if ($bad) { ", $bad failed (those parts stay on the interpreter; logs in $par)" } else { "" }

@@ -79,6 +79,10 @@ appear in the fast build are still possible: bring the screenshots to Claude.
   `WARNING: oversized generated file`, the build still finishes (that file is compiled without optimisation); bring it to Claude.
 - Close LM Studio, browsers and games while it builds. If everything stops with no FAIL line and no more heartbeats,
   the PC most likely ran out of memory: close more programs and rerun the same command; it resumes.
+- Pre-compile ("SPEED") stops each game after 45 minutes and builds with what is finished (Tomba 2 has one piece
+  that takes hours: 2026-10-05 it ran all night and the phone step was never reached). Finished pieces are kept,
+  so every rerun adds more until it says `SPEED: done`. Longer per run: `pwsh -File tools\speed.ps1 -GameDir ... -MaxMinutes 120`.
+- go.ps1 keeps the PC awake while it runs ("PC: kept awake" in progress.log). If it says it could not, set Sleep to Never.
 - To stop: Ctrl+C in the go.ps1 window, wait until no clang.exe is left in Task Manager. Rerunning resumes.
   Never unplug the drive during a build; use "Safely remove hardware" after stopping.
 

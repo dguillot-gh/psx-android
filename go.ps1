@@ -46,6 +46,19 @@ function Say([string]$msg) {
 }
 if (-not $Status) { Add-Content -Path $progress -Value ""; Say "=== go.ps1 started: -Game $Game, work folder $WorkDir" }
 
+# Keep the PC awake while this window runs (2026-10-05: an overnight run went silent mid-compile,
+# most likely the PC sleeping). This is a request from this process only, like a video player's;
+# it changes no power settings and ends when go.ps1 exits. The screen may still turn off.
+if (-not $Status) {
+    try {
+        Add-Type -Namespace PsxTools -Name Power -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint esFlags);' -ErrorAction Stop
+        [void][PsxTools.Power]::SetThreadExecutionState([uint32]2147483649)   # 0x80000001 = ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+        Say "PC: kept awake while go.ps1 runs"
+    } catch {
+        Say "PC: could not ask Windows to stay awake; set Sleep to Never for long runs ($($_.Exception.Message))"
+    }
+}
+
 # --- Stage 0: tools ------------------------------------------------------------
 if (-not $Status) {
     Say "SETUP: checking tools (downloads anything missing onto the drive)"
