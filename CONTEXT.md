@@ -175,3 +175,8 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
 - **GPU (gpu-gles) first results, Tomba 2 on the Pixel 8 (Mali-G715, OpenGL ES 3.2):** pipeline comes up,
   picture correct at 1x; 4x + bilinear + perspective = 31-42 game fps (0.55x). Next: profile (suspect
   per-frame CPU<->GPU VRAM sync/readback), not fill rate.
+- **Pinned (2026-10-06): GPU work paused after step 2b** (keep the hr FBO bound between batches; Tomba 2
+  gameplay did ~4,500 hr FBO binds/s at 4x -> 30-45 fps; Tomba 1 4x = solid 60). Next GPU steps when resumed:
+  re-enable dual-source via GL_EXT_blend_func_extended (Mali has it), batch uploads, then a threaded
+  renderer. **Pinned: multi-core** = GPU submission thread ("threaded rendering"), then SPU and MDEC
+  threads; game code itself stays single-threaded. Check upstream master for existing threading first.
