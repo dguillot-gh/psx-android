@@ -146,3 +146,8 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
   Tomba 2 at 2x held ~58 fps on the Pixel 8 (same as 1x). Revisit GLES only if software scaling isn't enough.
 - **Pinned by the user (2026-10-06, "not just yet"):** keep [video] choices across a disc re-pick (store
   them like the pad layout); Analog on/off in the menu panel; an "adding a new game" checklist in START-HERE.
+- **Pinned (2026-10-06): publishing to GitHub.** Plan discussed, nothing done: one repo per game (config,
+  seeds, tools, aot_exclude, README; never discs, disc EXEs, BIOS, `generated/`, overlays, APKs, saves,
+  keystore, box art), framework linked as a submodule (fork of mstan's psxrecomp, PolyForm Noncommercial)
+  or upstream + patch files. First step when resumed: read-only diff of framework\psxrecomp (not a git
+  checkout) against an upstream clone to isolate our changes. Personal GitHub account, private repos first.
