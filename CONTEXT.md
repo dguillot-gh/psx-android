@@ -109,3 +109,26 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
   compiles such a file without optimisation (runtime.cmake) so it still finishes.
 - That WARNING is never yours to fix: no tool may edit `generated\`, `psxrecomp\recompiler` or `runtime.cmake`.
   Keep the line and report it; Claude fixes the recompiler.
+
+## 2026-10-06 (Surface session) — framework changes, sync to the work PC's copy
+- **FPS counter:** pad menu second row has `FPS: on/off` (PadOverlay, remembered per game in prefs
+  `fps_counter`) > `PsxInput.nativeSetFpsCounter` > `android_apply_fps_request()` in main.cpp, which
+  calls the existing `fps_telemetry_toggle()`. Shows the runtime's "Game N FPS 1.00x" status line top left.
+- **On-screen toasts on Android:** `host_osd.c` now sets HOST_OSD_VISUAL for `__ANDROID__` too (it was
+  launcher-only, so "Disc 2 inserted", "Saved slot N" etc. were never drawn on the phone).
+- **Mouse games on the shared pad:** game.toml `[controller] mouse = true` makes PadOverlay a trackpad
+  (reads assets/game.toml.in): pad buttons hidden, drag = cursor (accelerated: 0.45-1.6 counts/dp),
+  tap = left click, two-finger tap = right click. New JNI `PsxInput.nativeMouseMotion/nativeMouseButton`
+  (forward to the old PolicenautsActivity ones). None of these files are codegen-hash inputs (still d8b96482).
+- **Policenauts is in recomps\policenauts_recomp** (from the 2026-10-03 snapshot): both discs, seeds,
+  `tools\overlay_extract.py` (wraps extract_bin_dpk.py), `aot_exclude.txt` (0006C000 logo-hang bug,
+  00012000), cards from the old app in `memcard-import\`. New package `com.psxrecomp.policenauts`
+  installs NEXT TO the old `com.policenauts.recomp` (old key D1:59:67:7F is not on the drive).
+- **template build.gradle:** stageGameOverlays skips slots listed in `<game>\aot_exclude.txt`.
+- **go.ps1 -Game all now includes tomba_recomp.** The phone's Tomba 1 is signed with the old D1:59 key:
+  the first install of the new build needs a full data backup, uninstall, install, restore (user said yes
+  once, 2026-10-06). After that it updates normally.
+- **setup.ps1:** command-line tools 23+ use `android sdk install ndk/28.2...` (sdkmanager.bat now forwards
+  to it and cmd split the `;` names). **phone.ps1 import-card:** push to /data/local/tmp + `run-as cp`
+  (exec-in stdin wrote nothing on the Pixel 8).
+- PowerShell 7 portable is in `tools-cache\pwsh` (this PC has no installed pwsh).

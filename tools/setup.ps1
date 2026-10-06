@@ -64,10 +64,18 @@ if (-not $need) {
         Remove-Item $unpack -Recurse -Force
     }
     $env:JAVA_HOME = Split-Path (Split-Path $java)
-    Write-Host "Accepting Android SDK licences..."
-    ("y`n" * 30) | & $sdkmanager "--sdk_root=$sdk" --licenses | Out-Null
     Write-Host "Installing into $sdk : $($need -join ', ') (a few GB, can take a while)..."
-    & $sdkmanager "--sdk_root=$sdk" @need | Out-Host
+    # Command-line tools 23+ (2026) replaced sdkmanager with "android sdk", which names packages with
+    # "/" (ndk/28.2.13676358). The old sdkmanager.bat now only forwards to it, and cmd splits the old
+    # "ndk;28..." names at the ";", so nothing but platform-tools got installed (Surface, 2026-10-06).
+    $androidCli = Join-Path $sdk "cmdline-tools\latest\bin\android.exe"
+    if (Test-Path $androidCli) {
+        & $androidCli --no-metrics "--sdk=$sdk" sdk install @($need | ForEach-Object { $_ -replace ";", "/" }) | Out-Host
+    } else {
+        Write-Host "Accepting Android SDK licences..."
+        ("y`n" * 30) | & $sdkmanager "--sdk_root=$sdk" --licenses | Out-Null
+        & $sdkmanager "--sdk_root=$sdk" @($need | ForEach-Object { "`"$_`"" }) | Out-Host
+    }
     $still = $sdkPackages | Where-Object { -not (Test-Path (Join-Path $sdk ($_ -replace ";", "\"))) }
     if ($still) { $fail += "Android SDK: $($still -join ', ')" } else { Write-Host "OK   Android SDK: $sdk (installed)" }
 }

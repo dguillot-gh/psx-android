@@ -101,9 +101,15 @@ tasks.register('stageGameOverlays', Sync) {
     def hashHeader = new File(gameRoot, 'psxrecomp/runtime/include/overlay_codegen_hash.h')
     def m = hashHeader.text =~ /PSX_OVERLAY_CODEGEN_HASH\s+0x([0-9a-fA-F]+)u/
     def codegen = m.find() ? m.group(1).toLowerCase().padLeft(8, '0') : null
+    // Per-game quarantine: <game>/aot_exclude.txt lists RAM slots (shard prefixes such as
+    // 0006C000) whose pre-compiled code must not ship; they stay on the interpreter.
+    def excludeFile = new File(gameRoot, 'aot_exclude.txt')
+    def excludedSlots = excludeFile.isFile() ?
+            excludeFile.readLines().collect { it.replaceAll('#.*', '').trim() }.findAll { it } : []
     from(overlayCacheRoot) {
         include "cg*_${codegen}_gc*_f*/*.so"
         include "cg*_${codegen}_gc*_f*/*.ranges"
+        excludedSlots.each { slot -> exclude "**/${slot}_*" }
         exclude '**/.*'
     }
     into generatedOverlayAssets.map { it.dir('overlays') }

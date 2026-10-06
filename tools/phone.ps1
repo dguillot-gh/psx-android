@@ -118,13 +118,20 @@ switch ($Action) {
             if (-not $Overwrite) { Write-Host "$Package already has card$slot.mcd: not replaced (rerun with -Overwrite to replace it; it is backed up first)"; exit 2 }
             Backup
         }
+        # Via the phone's temp folder, then copied in as the app's own user. (Streaming it in with
+        # "adb exec-in run-as ... cat > file" exited 0 but wrote nothing on the Pixel 8, 2026-10-06.)
         & $Adb shell run-as $Package mkdir -p files *> $null
-        Write-Host "ADB: exec-in run-as $Package sh -c 'cat > $dest' < $Card"
-        $p = Start-Process -FilePath $Adb -ArgumentList @("exec-in", "run-as", $Package, "sh", "-c", "'cat > $dest'") `
-            -RedirectStandardInput $Card -NoNewWindow -Wait -PassThru
+        $tmp = "/data/local/tmp/psx-card.mcd"
+        Invoke-Adb @("push", $Card, $tmp)
+        $pushed = $LASTEXITCODE
+        & $Adb shell chmod 644 $tmp
+        Invoke-Adb @("shell", "run-as", $Package, "cp", $tmp, $dest)
+        & $Adb shell run-as $Package chmod 771 files
+        & $Adb shell run-as $Package chmod 600 $dest
+        & $Adb shell rm -f $tmp
         $want = (Get-FileHash -LiteralPath $Card -Algorithm MD5).Hash.ToLower()
         $have = ((& $Adb shell run-as $Package md5sum $dest) -split '\s+')[0]
-        if ($p.ExitCode -ne 0 -or $have -ne $want) { Write-Host "FAIL: the card on the phone does not match $Card"; exit 1 }
+        if ($pushed -ne 0 -or $have -ne $want) { Write-Host "FAIL: the card on the phone does not match $Card"; exit 1 }
         Write-Host "$Package : memory card imported as card$slot.mcd (checked)"
     }
     "pull-captures" {

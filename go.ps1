@@ -1,6 +1,6 @@
 # The one command. Does everything it can, in order, skips what is already done,
 # and ends with a summary. Everything is written to the USB drive, not the PC's C: drive.
-#   pwsh -File go.ps1 -Game all                  every game in ..\recomps (except Tomba, already done)
+#   pwsh -File go.ps1 -Game all                  every game in ..\recomps (Tomba 1 and Policenauts included since 2026-10-06)
 #   pwsh -File go.ps1 -Game tomba2_recomp        one game
 #   pwsh -File go.ps1 -Game all -SkipBuild       port + regenerate only
 #   pwsh -File go.ps1 -Game all -NoPhone         build and copy APKs, but don't install
@@ -100,7 +100,7 @@ if ($Disc.Count) {
     }
 }
 $games = if ($Game -eq "all") {
-    Get-ChildItem $recomps -Directory | Where-Object { $_.Name -ne "tomba_recomp" } | ForEach-Object { $_.Name }
+    Get-ChildItem $recomps -Directory | ForEach-Object { $_.Name }
 } else { @($Game) }
 New-Item -ItemType Directory -Force $WorkDir | Out-Null
 $results = @()
