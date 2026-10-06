@@ -151,3 +151,8 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
   keystore, box art), framework linked as a submodule (fork of mstan's psxrecomp, PolyForm Noncommercial)
   or upstream + patch files. First step when resumed: read-only diff of framework\psxrecomp (not a git
   checkout) against an upstream clone to isolate our changes. Personal GitHub account, private repos first.
+- **GPU renderer pin, motivating number (2026-10-06):** FF7 on the software renderer with supersampling 4 +
+  antialiasing + 16:9 + bilinear + perspective = ~20 game fps on the Pixel 8. Routes: adapt gpu_gl_renderer
+  to GLES 3 (shaders, desktop-only calls; SDL GLES context) or the Vulkan backend. The user wants this later.
+- **play-test fps is DISPLAY fps** (SurfaceFlinger presents), not game fps: FF7 "60" while the in-game FPS
+  box showed 20. Fix: read `PsxInput.nativeGameFps` instead (e.g. turn the FPS counter on and log it).
