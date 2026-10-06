@@ -167,3 +167,11 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
 - **Policenauts speed:** the new app (com.psxrecomp.policenauts) started with no play captures; the old
   app's are recovered from the 2026-10-03 snapshot (par\g*.json etc.) into build-android-overlays\
   play_captures.json -> 1279 pre-compiled pieces (old fast build: 903). Old app uninstalled by the user.
+- **Pinned (2026-10-06):** (1) audio is lost after another app interrupts a game (pause/resume); a relaunch
+  brings it back. Android-layer bug, all games. (2) 16:9 needs per-game widescreen MOD packages (main.cpp
+  clamps [video] aspect_ratio: "widescreen is mod-owned on PSX"); the menu row is hidden. Tomba 1/2 have
+  widescreen mods in mstan's game repos. (3) Built-in mods worth exposing in the menu: psx.enhancement.
+  fast-loading, cd-speed, pgxp (framework\psxrecomp\mods\builtin\packages).
+- **GPU (gpu-gles) first results, Tomba 2 on the Pixel 8 (Mali-G715, OpenGL ES 3.2):** pipeline comes up,
+  picture correct at 1x; 4x + bilinear + perspective = 31-42 game fps (0.55x). Next: profile (suspect
+  per-frame CPU<->GPU VRAM sync/readback), not fill rate.
