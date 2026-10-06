@@ -144,3 +144,5 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
 - **PINNED by the user: GPU (OpenGL ES) renderer on Android.** PsxGameActivity passes `--renderer software`
   on purpose ("unavailable SDL GLES window path"). The software renderer's supersampling already works:
   Tomba 2 at 2x held ~58 fps on the Pixel 8 (same as 1x). Revisit GLES only if software scaling isn't enough.
+- **Pinned by the user (2026-10-06, "not just yet"):** keep [video] choices across a disc re-pick (store
+  them like the pad layout); Analog on/off in the menu panel; an "adding a new game" checklist in START-HERE.
