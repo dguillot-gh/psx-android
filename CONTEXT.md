@@ -132,3 +132,15 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
   to it and cmd split the `;` names). **phone.ps1 import-card:** push to /data/local/tmp + `run-as cp`
   (exec-in stdin wrote nothing on the Pixel 8).
 - PowerShell 7 portable is in `tools-cache\pwsh` (this PC has no installed pwsh).
+- **Pad menu is now a side panel (PsxMenu.java, 2026-10-06):** the top-centre button opens a scrolling panel
+  (right ~40% of the screen): Game (save/load state, change disc, Restart game), Display (FPS counter;
+  [video] supersampling 1-4x, antialiasing, texture_filtering, perspective_texturing written into
+  files/game.toml), Controls (Edit pad layout = the old drag editor, opacity). Display options need a
+  restart: Restart saves a state to the LAST slot, writes files/autoload_slot + files/restart_pending, kills
+  the ":game" process; LauncherActivity.onResume relaunches; PadOverlay loads the slot 3 s after start.
+  Re-picking discs in the start menu rewrites files/game.toml (the [video] choices are lost then).
+- **FPS counter is a movable pad control** (KIND_FPS, drawn by PadOverlay from `PsxInput.nativeGameFps()`);
+  on Android the runtime no longer draws the status line into the picture.
+- **PINNED by the user: GPU (OpenGL ES) renderer on Android.** PsxGameActivity passes `--renderer software`
+  on purpose ("unavailable SDL GLES window path"). The software renderer's supersampling already works:
+  Tomba 2 at 2x held ~58 fps on the Pixel 8 (same as 1x). Revisit GLES only if software scaling isn't enough.
