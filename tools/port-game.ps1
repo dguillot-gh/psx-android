@@ -4,7 +4,7 @@ $dest = Join-Path $OutRoot $Name
 if (Test-Path $dest) { Write-Host "FAIL: $dest exists"; exit 1 }
 robocopy (Join-Path $SourceDir $Name) $dest /E /XD build-release psxrecomp /NFL /NDL /NJH /NJS | Out-Null
 if ($LASTEXITCODE -ge 8) { Write-Host "FAIL: copy game"; exit 1 }
-robocopy $Framework (Join-Path $dest "psxrecomp") /E /XD (Join-Path $Framework "recompiler\build") /NFL /NDL /NJH /NJS | Out-Null
+robocopy $Framework (Join-Path $dest "psxrecomp") /E /XD (Join-Path $Framework "recompiler\build") (Join-Path $Framework ".git") /NFL /NDL /NJH /NJS | Out-Null
 if ($LASTEXITCODE -ge 8) { Write-Host "FAIL: copy framework"; exit 1 }
 $sec = ""; $v = @{}
 foreach ($l in Get-Content (Join-Path $dest "game.toml")) {

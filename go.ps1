@@ -139,7 +139,7 @@ foreach ($g in $games) {
     # stale copy in the framework once overwrote every game's correct one and broke the pre-compile.
     if (Test-Path $gameDir) {
         Say "PORT: already in $gameDir (updating its framework copy with any newer fixes)"
-        robocopy $framework (Join-Path $gameDir "psxrecomp") /E /XD (Join-Path $framework "recompiler\build") /XF overlay_codegen_hash.h /NFL /NDL /NJH /NJS | Out-Null
+        robocopy $framework (Join-Path $gameDir "psxrecomp") /E /XD (Join-Path $framework "recompiler\build") (Join-Path $framework ".git") /XF overlay_codegen_hash.h /NFL /NDL /NJH /NJS | Out-Null
     } elseif (-not (Test-Path (Join-Path $recomps $g))) {
         Say "FAIL: no such game in $recomps"; $results += "$g : FAIL no such game in $recomps"; continue
     } else {

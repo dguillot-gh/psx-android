@@ -156,3 +156,14 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
   to GLES 3 (shaders, desktop-only calls; SDL GLES context) or the Vulkan backend. The user wants this later.
 - **play-test fps is DISPLAY fps** (SurfaceFlinger presents), not game fps: FF7 "60" while the in-game FPS
   box showed 20. Fix: read `PsxInput.nativeGameFps` instead (e.g. turn the FPS counter on and log it).
+- **framework\psxrecomp is a git repo now (2026-10-06).** Remote `upstream` = github.com/mstan/psxrecomp
+  (partial clone, blob:none; core.autocrlf=true, core.filemode=false). Branches: `upstream-base` (240cff54,
+  the upstream commit our copy came from), `android` (checked out; = upstream-base + "Android port work
+  before 2026-10-06" + "FPS/menu/trackpad/D-pad" commits; every game syncs from this working tree),
+  `gpu-gles` (worktree at framework\psxrecomp-gpu: OpenGL ES work, NOT synced to games; test by copying its
+  changed files into one game's psxrecomp, e.g. tomba2). go.ps1/port-game.ps1 robocopy now skip `.git`.
+  **Pinned:** update to upstream master (766 commits since 240cff54): rebase `android` onto it, rebuild the
+  recompiler, regenerate + rebuild every game (new codegen hash = all overlays recompile). Home-PC script TBD.
+- **Policenauts speed:** the new app (com.psxrecomp.policenauts) started with no play captures; the old
+  app's are recovered from the 2026-10-03 snapshot (par\g*.json etc.) into build-android-overlays\
+  play_captures.json -> 1279 pre-compiled pieces (old fast build: 903). Old app uninstalled by the user.
