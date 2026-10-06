@@ -128,7 +128,7 @@ switch ($Action) {
         Invoke-Adb @("shell", "run-as", $Package, "cp", $tmp, $dest)
         & $Adb shell run-as $Package chmod 771 files
         & $Adb shell run-as $Package chmod 600 $dest
-        & $Adb shell rm -f $tmp
+        & $Adb shell rm $tmp *> $null
         $want = (Get-FileHash -LiteralPath $Card -Algorithm MD5).Hash.ToLower()
         $have = ((& $Adb shell run-as $Package md5sum $dest) -split '\s+')[0]
         if ($pushed -ne 0 -or $have -ne $want) { Write-Host "FAIL: the card on the phone does not match $Card"; exit 1 }
