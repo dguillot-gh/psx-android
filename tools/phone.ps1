@@ -19,6 +19,13 @@ param([string]$Action, [string]$Package, [string]$Apk, [string]$Folder, [string]
 # adb: the given path, else the SDK's platform-tools (drive first), else PATH.
 . (Join-Path $PSScriptRoot "paths.ps1")
 if (-not $Adb) { $Adb = Find-Adb }
+# Start adb's background server DETACHED. Started by an ordinary adb call, it inherits that call's
+# output pipe; a caller reading the pipe (speed.ps1's `pwsh ... | Out-Host`) then waits forever for it
+# to close (2026-10-07: Parasite Eve's pre-compile sat 45 min after "play captures saved").
+if (-not $DryRun -and $Adb -and -not (Get-Process adb -ErrorAction SilentlyContinue)) {
+    Start-Process -FilePath $Adb -ArgumentList "start-server" -WindowStyle Hidden
+    Start-Sleep -Seconds 3
+}
 $CardSize = 131072   # a PS1 memory card image is exactly 128 KB
 
 function Invoke-Adb([string[]]$a, [string]$To) {
