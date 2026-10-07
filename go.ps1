@@ -1,9 +1,11 @@
 # The one command. Does everything it can, in order, skips what is already done,
 # and ends with a summary. Everything is written to the USB drive, not the PC's C: drive.
 #   pwsh -File go.ps1 -Game all                  every game in ..\recomps (Tomba 1 and Policenauts included since 2026-10-06)
-#   pwsh -File go.ps1 -Game tomba2_recomp        one game
+#   pwsh -File go.ps1 -Game tomba2_recomp        one game (or several, comma-separated: -Game "gex_recomp,gex2_recomp")
 #   pwsh -File go.ps1 -Game all -SkipBuild       port + regenerate only
 #   pwsh -File go.ps1 -Game all -NoPhone         build and copy APKs, but don't install
+#   pwsh -File go.ps1 -Game "a_recomp,b_recomp" -Speed -NoInstall   read the phone's play captures, but build only
+#                                                (for two go.ps1 runs side by side; install afterwards)
 #   pwsh -File go.ps1 -Game all -NoDiscPush      install, but don't copy disc images to the phone
 #   pwsh -File go.ps1 -Game tomba2_recomp -Framework ..\framework\psxrecomp-next -WorkDir ..\android-recomp-next -NoPhone
 #                                                test build on another framework copy, in its own work folder
@@ -28,6 +30,7 @@ param(
     [string]$Framework = "",
     [switch]$SkipBuild,
     [switch]$NoPhone,
+    [switch]$NoInstall,
     [switch]$NoDiscPush,
     [switch]$Speed,
     [int]$TestSeconds = 90,
@@ -104,7 +107,7 @@ if ($Disc.Count) {
 }
 $games = if ($Game -eq "all") {
     Get-ChildItem $recomps -Directory | ForEach-Object { $_.Name }
-} else { @($Game) }
+} else { @($Game -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }   # one game, or several: -Game "a_recomp,b_recomp"
 New-Item -ItemType Directory -Force $WorkDir | Out-Null
 $results = @()
 $built = @()   # @{ Game; Package; Apk }
@@ -227,7 +230,7 @@ foreach ($g in $games) {
 }
 
 # --- Stage 3: phone ------------------------------------------------------------
-if ($built.Count -and -not $NoPhone) {
+if ($built.Count -and -not $NoPhone -and -not $NoInstall) {
     Write-Host ""
     Say "===== PHONE ====="
     pwsh -NoProfile -File tools\phone.ps1 -Action connect
