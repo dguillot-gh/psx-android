@@ -34,6 +34,7 @@ param(
     [switch]$NoDiscPush,
     [switch]$Speed,
     [int]$TestSeconds = 90,
+    [int]$SpeedMinutes = 0,      # -Speed pre-compile time cap (0 = speed.ps1 default, 45); unfinished pieces resume next run
     [string[]]$Disc = @()
 )
 Set-Location $PSScriptRoot
@@ -214,6 +215,7 @@ foreach ($g in $games) {
         # Pre-compile the game's overlay code, then build the fast "play" version (no debug server).
         $speedArgs = @("-NoProfile", "-File", "tools\speed.ps1", "-GameDir", $gameDir, "-Package", $pkg)
         if (-not $phoneUp) { $speedArgs += "-NoPhone" }
+        if ($SpeedMinutes -gt 0) { $speedArgs += @("-MaxMinutes", "$SpeedMinutes") }
         pwsh @speedArgs
         if ($LASTEXITCODE -ne 0) { Say "SPEED: FAILED (see above); building the play version without pre-compiled code"; $result += ", pre-compile failed" }
         $buildArgs += "-Play"
