@@ -188,7 +188,18 @@ switch ($Action) {
         else { Write-Host "NOTE: the game process is not running anymore (crashed or closed); saving the crash log."; Invoke-Adb @("logcat", "-d", "-T", $sinceArg) $log | Out-Null }
         Invoke-Adb @("logcat", "-d", "-b", "crash", "-T", $sinceArg) (Join-Path $OutDir "crash.txt") | Out-Null
         $st = $fps | Measure-Object -Minimum -Average -Maximum
-        $summary = if ($fps.Count) { "fps min {0}, average {1:F1}, max {2} ({3} samples)" -f $st.Minimum, $st.Average, $st.Maximum, $fps.Count } else { "no frame timing (the game may not have drawn anything)" }
+        # SurfaceFlinger counts SCREEN updates (the app presents every vsync even when the game is
+        # slower), so it is labelled "screen". The game's real speed is the runtime's own [FPS] line,
+        # logged every second while the FPS counter is on (pad menu > Display > FPS counter).
+        $summary = if ($fps.Count) { "screen fps min {0}, average {1:F1}, max {2} ({3} samples)" -f $st.Minimum, $st.Average, $st.Maximum, $fps.Count } else { "no frame timing (the game may not have drawn anything)" }
+        $gameFps = @(Get-Content $log -ErrorAction SilentlyContinue | ForEach-Object { if ($_ -match '\[FPS\] game: ([0-9.]+) fps') { [double]$Matches[1] } })
+        if ($gameFps.Count -gt 3) { $gameFps = $gameFps[2..($gameFps.Count - 1)] }   # skip the start-up seconds
+        if ($gameFps.Count) {
+            $gs = $gameFps | Measure-Object -Minimum -Average -Maximum
+            $summary = ("GAME fps min {0}, average {1:F1}, max {2} ({3} samples); " -f $gs.Minimum, $gs.Average, $gs.Maximum, $gameFps.Count) + $summary
+        } else {
+            $summary = "game fps unknown (turn on the FPS counter in the pad menu to log it); " + $summary
+        }
         if (-not $gamePid) { $summary = "game process ended during the test; " + $summary }
         Set-Content (Join-Path $OutDir "summary.txt") $summary
         Write-Host "$Package : $summary. Screenshots and log in $OutDir"

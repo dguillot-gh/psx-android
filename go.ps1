@@ -5,6 +5,8 @@
 #   pwsh -File go.ps1 -Game all -SkipBuild       port + regenerate only
 #   pwsh -File go.ps1 -Game all -NoPhone         build and copy APKs, but don't install
 #   pwsh -File go.ps1 -Game all -NoDiscPush      install, but don't copy disc images to the phone
+#   pwsh -File go.ps1 -Game tomba2_recomp -Framework ..\framework\psxrecomp-next -WorkDir ..\android-recomp-next -NoPhone
+#                                                test build on another framework copy, in its own work folder
 #   pwsh -File go.ps1 -Status                    only list which task cards pass
 #   pwsh -File go.ps1 -Game all -Speed           the FAST builds: pre-compile each game's overlay code
 #                                                (tools\speed.ps1), build the play version, install it,
@@ -23,6 +25,7 @@ param(
     [switch]$Status,
     [string]$Game = "all",
     [string]$WorkDir = "",
+    [string]$Framework = "",
     [switch]$SkipBuild,
     [switch]$NoPhone,
     [switch]$NoDiscPush,
@@ -34,7 +37,7 @@ Set-Location $PSScriptRoot
 . (Join-Path $PSScriptRoot "tools\paths.ps1")
 if (-not $WorkDir) { $WorkDir = $DefaultWorkDir }          # <drive>\recomp-backups\android-recomp
 $recomps = Join-Path $DriveRoot "recomps"
-$framework = Join-Path $DriveRoot "framework\psxrecomp"
+$framework = if ($Framework) { (Resolve-Path $Framework).Path } else { Join-Path $DriveRoot "framework\psxrecomp" }
 $apkStore = Join-Path $DriveRoot ("apks\" + (Get-Date -Format "yyyy-MM-dd"))
 $progress = Join-Path $PSScriptRoot "progress.log"
 
@@ -139,7 +142,7 @@ foreach ($g in $games) {
     # stale copy in the framework once overwrote every game's correct one and broke the pre-compile.
     if (Test-Path $gameDir) {
         Say "PORT: already in $gameDir (updating its framework copy with any newer fixes)"
-        robocopy $framework (Join-Path $gameDir "psxrecomp") /E /XD (Join-Path $framework "recompiler\build") (Join-Path $framework ".git") /XF overlay_codegen_hash.h /NFL /NDL /NJH /NJS | Out-Null
+        robocopy $framework (Join-Path $gameDir "psxrecomp") /MIR /XD (Join-Path $framework "recompiler\build") (Join-Path $framework ".git") /XF overlay_codegen_hash.h /NFL /NDL /NJH /NJS | Out-Null
     } elseif (-not (Test-Path (Join-Path $recomps $g))) {
         Say "FAIL: no such game in $recomps"; $results += "$g : FAIL no such game in $recomps"; continue
     } else {
