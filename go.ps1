@@ -41,7 +41,7 @@ Set-Location $PSScriptRoot
 . (Join-Path $PSScriptRoot "tools\paths.ps1")
 if (-not $WorkDir) { $WorkDir = $DefaultWorkDir }          # <drive>\recomp-backups\android-recomp
 $recomps = Join-Path $DriveRoot "recomps"
-$framework = if ($Framework) { (Resolve-Path $Framework).Path } else { Join-Path $DriveRoot "framework\psxrecomp" }
+$framework = if ($Framework) { (Resolve-Path $Framework).Path } else { $FrameworkDir }   # paths.ps1: drive folder or the repo's submodule
 $apkStore = Join-Path $DriveRoot ("apks\" + (Get-Date -Format "yyyy-MM-dd"))
 $progress = Join-Path $PSScriptRoot "progress.log"
 
@@ -91,6 +91,12 @@ foreach ($card in $cards) {
 if ($Status) { exit 0 }
 Say "TASKS: all pass"
 if (-not (Test-Path (Join-Path $framework "runtime\runtime.cmake"))) { Say "FAIL: framework missing at $framework"; exit 1 }
+# A fresh clone (or another PC) has no recompiler yet: build it once (tools\build-recompiler.ps1).
+if (-not (Test-Path (Join-Path $framework "recompiler\build-mingw\psxrecomp-game.exe"))) {
+    Say "RECOMPILER: not built yet on this PC; building it (5-10 min, downloads a compiler the first time)"
+    pwsh -NoProfile -File tools\build-recompiler.ps1
+    if ($LASTEXITCODE -ne 0) { Say "FAIL: could not build the recompiler (see above)"; exit 1 }
+}
 
 # --- Stage 2: games ----------------------------------------------------------
 # A new game (no recomp yet): create it from the given discs first, then treat it like any other.
@@ -153,6 +159,16 @@ foreach ($g in $games) {
         Say "PORT: copying into $gameDir (0.5-1 GB)"
         pwsh -NoProfile -File tools\port-game.ps1 -Name $g -SourceDir $recomps -Framework $framework -OutRoot $WorkDir
         if ($LASTEXITCODE -ne 0) { Say "FAIL: port-game.ps1"; $results += "$g : FAIL port-game.ps1"; continue }
+    }
+
+    # Play captures that came with the game (games\<name>\ in a clone of the repository, copied by
+    # new-recomp.ps1): seed the pre-compile with them the first time, so it covers the code they list.
+    $seedCaps = Join-Path (Join-Path $recomps $g) "play_captures.json"
+    $workCaps = Join-Path $gameDir "build-android-overlays\play_captures.json"
+    if ((Test-Path $seedCaps) -and -not (Test-Path $workCaps)) {
+        New-Item -ItemType Directory -Force (Split-Path $workCaps) | Out-Null
+        Copy-Item $seedCaps $workCaps
+        Say "SPEED: using the play captures that came with $g"
     }
 
     # Regenerate C code with this framework's recompiler (the original is kept in generated.orig).

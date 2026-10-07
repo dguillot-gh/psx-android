@@ -1,6 +1,6 @@
-# Parasite Eve for Android (psxrecomp)
+# LEGO Island 2 - The Brickster's Revenge for Android (psxrecomp)
 
-Private. This repository holds only what makes **Parasite Eve** run as a native Android app: its
+Private. This repository holds only what makes **LEGO Island 2 - The Brickster's Revenge** run as a native Android app: its
 configuration, code entry points (seeds), helper tools and play captures. **It contains no game
 code or data.** You build the app on your own PC from **your own disc**; nothing from the disc is
 ever uploaded.
@@ -10,23 +10,23 @@ the full how-to. Engine: [psxrecomp-android](https://github.com/dguillot-gh/psxr
 (mstan/psxrecomp + our Android layer; PolyForm Noncommercial: personal, non-commercial use only).
 
 ## Status
-Plays (2026-10-07): steady 60 fps on a Pixel 8. Disc 1 only tested.
+Builds and installs (2026-10-07). First boot not checked yet.
 
 ## The disc you need
-- Serial **SLUS-00662**, 2 disc(s), as `.cue` + `.bin` (a raw rip of your own copy).
-- Tested with: `Parasite Eve (USA) (Disc 1).cue`, `Parasite Eve (USA) (Disc 2).cue` (your file names may differ, that's fine).
-- Known-good dump, Track 1 MD5: `efae1df4faf4aadbfd4dc3aa022296cf`. Other dumps of the same serial usually work too.
+- Serial **SLUS-01246**, 1 disc(s), as `.cue` + `.bin` (a raw rip of your own copy).
+- Tested with: `LEGO Island 2 - The Brickster's Revenge (USA).cue` (your file names may differ, that's fine).
+- Known-good dump, Track 1 MD5: `d72539f30724d50c567452eade0a7bf5`. Other dumps of the same serial usually work too.
 
 ## Build it and put it on your phone
 Follow **Get a game on your phone** in the psx-android README once (PC setup), then:
 
 ```powershell
-pwsh -File go.ps1 -Game parasite_eve_recomp -Disc "D:\my discs\<disc 1>.cue","D:\my discs\<disc 2>.cue" -Speed
+pwsh -File go.ps1 -Game legoisland2_recomp -Disc "D:\my discs\<disc 1>.cue" -Speed
 ```
 
-List every disc's `.cue` in order, separated by commas. The app (com.psxrecomp.parasiteeve) is installed on the phone
-over USB, and the disc is copied to the phone's `Download\parasite_eve_recomp` folder. On the phone: open the app,
-**Select game file**, side menu > your phone > Download > parasite_eve_recomp, pick the `.cue` files (all of them), then **Play**.
+List every disc's `.cue` in order, separated by commas. The app (com.psxrecomp.legoisland2) is installed on the phone
+over USB, and the disc is copied to the phone's `Download\legoisland2_recomp` folder. On the phone: open the app,
+**Select game file**, side menu > your phone > Download > legoisland2_recomp, pick the `.cue`, then **Play**.
 
 ## What's here
 | File | What |

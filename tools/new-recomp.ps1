@@ -21,7 +21,7 @@ param(
 if ($Name -notmatch '^[a-z0-9_]+_recomp$') { Write-Host "FAIL: -Name must look like ff7_recomp (lowercase, ends in _recomp)"; exit 1 }
 $py = Find-Python
 if (-not $py) { Write-Host "FAIL: no Python (run tools\setup.ps1)"; exit 1 }
-$probe = Join-Path $DriveRoot "framework\psxrecomp\tools\new_project_layout\probe_disc.py"
+$probe = Join-Path $FrameworkDir "tools\new_project_layout\probe_disc.py"
 $dest = Join-Path $DriveRoot "recomps\$Name"
 if (Test-Path $dest) { Write-Host "FAIL: $dest already exists (pick another name, or ask Claude)"; exit 1 }
 
@@ -71,6 +71,37 @@ $add = ""
 if ($toml -notmatch '(?m)^\[runtime\]') { $add += "`n[runtime]`nmemcard_dir = `"saves`"`n" }
 if ($toml -notmatch '(?m)^\[controller\]') { $add += "`n[controller]`ndefault_mode = `"digital`"`n" }
 if ($add) { Add-Content (Join-Path $dest "game.toml") $add -Encoding utf8NoBOM }
+
+# 4. A game this repository already knows (games\<Name>\, e.g. after cloning psx-android on another PC):
+#    use ITS tuned game.toml, seeds, tools and play captures instead of the fresh probe's first guess.
+#    Only the disc file names come from the user's own copy (theirs may be named differently).
+$known = Join-Path $RepoRoot "games\$Name"
+if (Test-Path (Join-Path $known "game.toml")) {
+    $ours = Get-Content (Join-Path $known "game.toml") -Raw
+    $probeId = if ($toml -match '(?m)^id\s*=\s*"([^"]+)"') { $Matches[1] } else { "" }
+    $ourId = if ($ours -match '(?m)^id\s*=\s*"([^"]+)"') { $Matches[1] } else { "" }
+    if ($probeId -and $ourId -and $probeId -ne $ourId) {
+        Write-Host "FAIL: this disc is $probeId, but $Name is set up for $ourId (another region or version)."
+        Write-Host "      Use the $ourId disc, or remove $dest and pick another -Name to start from scratch."
+        exit 1
+    }
+    # [game]: drop the repo's disc/discs lines, put this PC's disc names right after `exe =`.
+    $discLines = "discs = [`n" + (($cues | ForEach-Object { "  `"$_`"," }) -join "`n") + "`n]`ndisc = `"$($cues[0])`""
+    $ours = [regex]::Replace($ours, '(?ms)^discs\s*=\s*\[.*?^\]\s*\r?\n', '')
+    $ours = [regex]::Replace($ours, '(?m)^disc\s*=\s*".*"\s*\r?\n', '')
+    $ours = [regex]::Replace($ours, '(?m)^(exe\s*=\s*".*")\s*$', { param($m) $m.Groups[1].Value + "`n" + $discLines }, 1)
+    Set-Content (Join-Path $dest "game.toml") $ours -Encoding utf8NoBOM -NoNewline
+    foreach ($d in "seeds", "tools") {
+        $s = Join-Path $known $d
+        if (Test-Path $s) { Copy-Item $s $dest -Recurse -Force }
+    }
+    foreach ($f in "aot_exclude.txt", "play_captures.json", "README.md") {
+        $s = Join-Path $known $f
+        if (Test-Path $s) { Copy-Item $s $dest -Force }
+    }
+    $toml = $ours
+    Write-Host "Using this repository's setup for $Name (games\$Name): tuned config, seeds, tools, play captures."
+}
 
 $id = if ($toml -match '(?m)^id\s*=\s*"([^"]+)"') { $Matches[1] } else { "?" }
 $exe = if ($toml -match '(?m)^exe\s*=\s*"([^"]+)"') { $Matches[1] } else { "?" }

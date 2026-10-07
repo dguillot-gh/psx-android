@@ -9,6 +9,13 @@ $ToolsCache = Join-Path $DriveRoot "tools-cache"
 $SdkHome = Join-Path $ToolsCache "android-sdk"
 $GradleHome = Join-Path $ToolsCache "gradle"
 $DefaultWorkDir = Join-Path $DriveRoot "android-recomp"
+# The psxrecomp framework: <root>\framework\psxrecomp on the USB drive; in a clone of the psx-android
+# repository (no framework folder beside it) it is the repository's own framework\ submodule.
+$RepoRoot = Split-Path -Parent $PSScriptRoot
+$FrameworkDir = Join-Path $DriveRoot "framework\psxrecomp"
+if (-not (Test-Path (Join-Path $FrameworkDir "runtime\runtime.cmake")) -and
+    (Test-Path (Join-Path $RepoRoot "framework\runtime\runtime.cmake"))) { $FrameworkDir = Join-Path $RepoRoot "framework" }
+$LlvmMingw = Join-Path $ToolsCache "llvm-mingw"    # portable C++ compiler for the recompiler (build-recompiler.ps1)
 
 function Find-Java {
     $c = @()

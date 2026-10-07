@@ -156,4 +156,4 @@ PC's key to `..\tools-cache\debug.keystore` (only if it matches the games alread
 
 ## Writing new tools with the local model (optional)
 Task cards in `tasks\` describe tools for the local model to write. If any card's check fails, `go.ps1` runs it first
-(via `run.ps1` and LM Studio with qwen3.5-9b on port 1234). All current cards already pass. See README.md.
+(via `run.ps1` and LM Studio with qwen3.5-9b on port 1234). All current cards already pass. See LOCAL-MODEL.md.

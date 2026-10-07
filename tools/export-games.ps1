@@ -15,6 +15,25 @@ $work = $DefaultWorkDir
 $files = "game.toml", "aot_exclude.txt", "extra_discs.txt", "README.md", "REFERENCE.md", "VERSION",
          "CMakeLists.txt", "build.ps1", "catalog_identity.json", "disc_probe.json"
 $dirs = "seeds", "tools"
+# One line per game for its README (update after testing). Games not listed: "Set up, not built yet."
+$GameStatus = @{
+    "atvracers_recomp"     = "Builds and installs (2026-10-07). Saves and save states work. Not play-tested further yet."
+    "crash2_recomp"        = "Builds and installs (2026-10-07). First boot not checked yet."
+    "crash3_recomp"        = "Builds and installs (2026-10-07). First boot not checked yet."
+    "einhander_recomp"     = "Plays (2026-10-07): steady 60 fps on a Pixel 8 with the speed pre-compile."
+    "ff7_recomp"           = "Plays (2026-10-07): about 50 fps in the opening on a Pixel 8. 3 discs."
+    "legoisland2_recomp"   = "Builds and installs (2026-10-07). First boot not checked yet."
+    "parasite_eve_recomp"  = "Plays (2026-10-07): steady 60 fps on a Pixel 8. Disc 1 only tested."
+    "parasite_eve2_recomp" = "Plays (2026-10-07) on a Pixel 8. Known issue: no sound. Disc 1 only tested."
+    "persona_recomp"       = "Plays (2026-10-07): steady 60 fps on a Pixel 8."
+    "persona2_recomp"      = "Plays (2026-10-07): about 60 fps on a Pixel 8."
+    "policenauts_recomp"   = "Plays (2026-10-07) with the touch trackpad (Sony Mouse). Known issue: slow opening (about 30 fps). Japanese release, 2 discs."
+    "tomba_recomp"         = "Plays (2026-10-07): steady 60 fps on a Pixel 8."
+    "tomba2_recomp"        = "Plays (2026-10-07) on a Pixel 8; GPU renderer recommended (menu > Display)."
+    "gt2sim_recomp"        = "NOT WORKING YET: the recompiler mistakes data for code and makes ~5 GB of C. Needs investigation."
+    "lod_recomp"           = "NOT WORKING YET: same data-as-code problem as GT2. 4 discs. Set aside."
+    "gt2arcade_recomp"     = "Set aside (not built). Likely the same data-as-code problem as GT2 Simulation."
+}
 # recomps-later\ holds games set aside from the pipeline for now; their setup is kept too.
 $later = Join-Path $DriveRoot "recomps-later"
 foreach ($g in @(Get-ChildItem $recomps -Directory) + @(Get-ChildItem $later -Directory -ErrorAction SilentlyContinue)) {
@@ -34,6 +53,66 @@ foreach ($g in @(Get-ChildItem $recomps -Directory) + @(Get-ChildItem $later -Di
     }
     $cap = Join-Path $work "$($g.Name)\build-android-overlays\play_captures.json"
     if (Test-Path $cap) { Copy-Item $cap (Join-Path $dest "play_captures.json") }
+
+    # README for this game's own repository. An upstream README (a game first published by
+    # someone else) is kept beside it as UPSTREAM-README.md.
+    $readme = Join-Path $dest "README.md"
+    if (Test-Path $readme) { Move-Item $readme (Join-Path $dest "UPSTREAM-README.md") -Force }
+    $toml = Get-Content (Join-Path $dest "game.toml") -Raw
+    $gameSec = if ($toml -match '(?ms)^\[game\](.*?)(^\[|\z)') { $Matches[1] } else { $toml }
+    $title = if ($gameSec -match '(?m)^name\s*=\s*"([^"]+)"') { $Matches[1] -replace '(\s*\([^)]*\))+$', '' } else { $g.Name }
+    $serial = if ($gameSec -match '(?m)^id\s*=\s*"([^"]+)"') { $Matches[1] } else { "?" }
+    $cueNames = @()
+    if ($gameSec -match '(?ms)^discs\s*=\s*\[(.*?)^\]') { $cueNames = @([regex]::Matches($Matches[1], '"([^"]+)"') | ForEach-Object { Split-Path $_.Groups[1].Value -Leaf }) }
+    elseif ($gameSec -match '(?m)^disc\s*=\s*"([^"]+)"') { $cueNames = @(Split-Path $Matches[1] -Leaf) }
+    $md5 = if ($toml -match '(?ms)^known_md5\s*=\s*\[\s*"([0-9a-f]{32})"') { $Matches[1] } else { "" }
+    $short = $g.Name -replace '_recomp$', ''
+    $pkg = "com.psxrecomp." + ($short.ToLower() -replace '[^a-z0-9]', '')
+    $status = $GameStatus[$g.Name]; if (-not $status) { $status = "Set up, not built yet." }
+    $discArg = (1..[Math]::Max(1, $cueNames.Count) | ForEach-Object { "`"D:\my discs\<disc $_>.cue`"" }) -join ","
+    $md = @(
+        "# $title for Android (psxrecomp)",
+        "",
+        "Private. This repository holds only what makes **$title** run as a native Android app: its",
+        "configuration, code entry points (seeds), helper tools and play captures. **It contains no game",
+        "code or data.** You build the app on your own PC from **your own disc**; nothing from the disc is",
+        "ever uploaded.",
+        "",
+        "Part of [psx-android](https://github.com/dguillot-gh/psx-android), which has the build scripts and",
+        "the full how-to. Engine: [psxrecomp-android](https://github.com/dguillot-gh/psxrecomp-android)",
+        "(mstan/psxrecomp + our Android layer; PolyForm Noncommercial: personal, non-commercial use only).",
+        "",
+        "## Status",
+        $status,
+        "",
+        "## The disc you need",
+        "- Serial **$serial**, $($cueNames.Count) disc(s), as ``.cue`` + ``.bin`` (a raw rip of your own copy).",
+        ("- Tested with: " + (($cueNames | ForEach-Object { "``$_``" }) -join ", ") + " (your file names may differ, that's fine).")
+    )
+    if ($md5) { $md += "- Known-good dump, Track 1 MD5: ``$md5``. Other dumps of the same serial usually work too." }
+    $md += @(
+        "",
+        "## Build it and put it on your phone",
+        "Follow **Get a game on your phone** in the psx-android README once (PC setup), then:",
+        "",
+        "``````powershell",
+        "pwsh -File go.ps1 -Game $($g.Name) -Disc $discArg -Speed",
+        "``````",
+        "",
+        "List every disc's ``.cue`` in order, separated by commas. The app ($pkg) is installed on the phone",
+        "over USB, and the disc is copied to the phone's ``Download\$($g.Name)`` folder. On the phone: open the app,",
+        ("**Select game file**, side menu > your phone > Download > $($g.Name), pick the ``.cue``" +
+            $(if ($cueNames.Count -gt 1) { " files (all of them)" } else { "" }) + ", then **Play**."),
+        "",
+        "## What's here",
+        "| File | What |",
+        "|---|---|",
+        "| ``game.toml`` | the game's configuration (boot program, memory layout, controller, video) |",
+        "| ``seeds/`` | code entry points the recompiler starts from |",
+        "| ``play_captures.json`` | addresses of code the game loaded while being played; makes the speed pre-compile cover it |",
+        "| ``tools/``, ``aot_exclude.txt`` | game-specific helpers / pieces kept off the pre-compile (when present) |"
+    )
+    Set-Content $readme $md -Encoding utf8NoBOM
     $n = @(Get-ChildItem $dest -Recurse -File).Count
     Write-Host ("{0,-24} {1,3} files" -f $g.Name, $n)
 }
