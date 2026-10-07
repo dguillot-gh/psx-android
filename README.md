@@ -105,3 +105,13 @@ that made them**: after an app update, make new ones.
 - `tools\phone-pass.ps1`: install, disc copy and test for games that are already built.
 - `tools\export-games.ps1`: refresh `games\<name>` from the build drive's `recomps\` after changing a game.
 - `tools\build-recompiler.ps1`: build the recompiler on this PC (go.ps1 does it when needed).
+
+## License and credits
+- The scripts and docs in this repository are under the **MIT License** (`LICENSE`).
+- It does not cover the linked repositories: the engine (`framework/`, psxrecomp-android) is under
+  **PolyForm Noncommercial 1.0.0** like [mstan/psxrecomp](https://github.com/mstan/psxrecomp) it is based on;
+  each game repository under `games/` holds only configuration and has its own terms.
+- Credits: [mstan/psxrecomp](https://github.com/mstan/psxrecomp) (the recompiler and runtime),
+  [OpenBIOS](https://github.com/grumpycoders/pcsx-redux) (MIT, the free PS1 BIOS the apps boot),
+  [SDL](https://libsdl.org) (zlib), and Slowbeef's Policenauts English translation patch (the Policenauts setup
+  expects the patched disc). No game code, game data or BIOS images are part of any of these repositories.
