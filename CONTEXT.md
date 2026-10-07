@@ -245,3 +245,22 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
   repo's games\<name> setup and only takes disc names from their copy; build-recompiler.ps1 self-builds.
 - **Pinned (user):** shareable APK with no game code that builds the game on the phone from the user's disc
   (like Matteo842/CrashBandicoot-Launcher, ZeldaWWHDRecomp); later GitHub Actions builds it as a Release.
+
+## PINNED LIST (consolidated end of 2026-10-07; supersedes the scattered pins above)
+Fixes: (1) Policenauts opening ~30 fps (full speed pre-compile running tonight; re-test, then profile with
+PSX_RUNTIME_PERF_DIAG=1). (2) PE2 no sound. (3) Audio dies after another app interrupts (all games).
+(4) Persona 2 / Tomba 2 cutscene lag (re-check). (5) First boots: crash2, crash3, legoisland2, gex 1-3 (gex2
+retry queued after tonight's batch). (6) gt2sim / gt2arcade / lod: data-as-code recompiler fix. (7) Re-port
+the dense game-dispatch index + BIOS key-page route into game_dispatch_emitter.cpp if speed regressed.
+Features: (8) 16:9 toggle (route 1 drop clamp + unhide row; route 2 mstan's Tomba 1/2 widescreen mods).
+(9) Analog on/off in the menu panel. (10) Keep [video] choices across a disc re-pick. (11) Built-in mods in
+the menu (fast-loading, cd-speed, pgxp). (12) GPU: verify Tomba 2 gameplay at 4x; EXT_blend_func_extended
+dual-source, batched uploads, threaded renderer; later multi-core (SPU/MDEC threads).
+Pipeline: (13) download SDL3 once, reuse in every build (a DNS drop failed gex2 at 17:20). (14) phone
+install: skip the Download disc copy when files/gamedata already has the disc (phone filled up 2026-10-07).
+(15) test the co-worker flow on a fresh `git clone --recursive` of psx-android. (16) "adding a new game"
+checklist in START-HERE. (17) sync the work-PC framework copy to branch android (f1919cd6).
+Sharing: (18) shareable APK (memory note "project-shareable-apk-on-device-build"): milestone 1 = engine-only
+APK loading the game code module from storage; then on-phone TCC build; one library app keyed by disc
+serial; GitHub Actions releases + Obtainium. (19) upstream PR of the Android layer to mstan/psxrecomp.
+(20) make repos public after stripping local paths from game.toml; invite co-workers (read-only).
