@@ -1,0 +1,64 @@
+# Autofilled by tools/new_project_layout/probe_disc.py from your legal dump.
+# Review before shipping. Runtime quirks / overlay seeds still need hand work.
+
+[game]
+name = "Legend of Dragoon, The (USA, Canada) (Disc 1)"
+id = "SCUS-94491"
+players = 1
+exe = "disc/SCUS_944.91"
+# Verified as one program on N images (verify_disc_set.py).
+# Disc 1 boots; the rest are data. The runtime builds its disc
+# roster from this list and mounts the SELECTED one (remembered
+# in disc_index), so the launcher can switch discs between runs.
+# Swapping mid-session is MULTI_DISC.md P3 and is not implemented.
+discs = [
+    "disc/Legend of Dragoon, The (USA, Canada) (Disc 1).cue",
+    "disc/Legend of Dragoon, The (USA, Canada) (Disc 2).cue",
+    "disc/Legend of Dragoon, The (USA, Canada) (Disc 3).cue",
+    "disc/Legend of Dragoon, The (USA, Canada) (Disc 4).cue",
+]
+load_address = "0x80188888"
+entry_pc = "0x801BF4E8"
+text_size = "0x0003E000"
+stack_base = "0x801FFFF0"
+
+# Digests are for data Track 01 (first BINARY FILE / TRACK 01).
+[prepare_disc]
+out_dir = "disc"
+bin_name = "Legend of Dragoon, The (USA, Canada) (Disc 1).bin"
+cue_name = "Legend of Dragoon, The (USA, Canada) (Disc 1).cue"
+boot_exe = "SCUS_944.91"
+known_sizes = [484951824]
+known_md5 = [
+  "acf7717e2192c78d8c5859cfacfc384d",
+]
+known_sha1 = [
+  "8dfe525bd348531ac69f0a025e04ce08b8f6079f",
+]
+known_crc32 = [
+  "24cb8f5c",
+]
+
+[recompiler]
+seeds = "seeds/ghidra_funcs.txt"
+out_dir = "generated"
+strict = true
+
+[runtime]
+window_title = "Legend of Dragoon, The (USA, Canada) (Disc 1) Recompiled"
+memcard_dir = "saves"
+overlay_cache = true
+
+[video]
+renderer = "opengl"
+aspect_ratio = "4:3"
+
+[controller]
+default_mode = "digital"
+
+# Online mount gate: digests + track count + optional TOC fingerprint
+# (see docs/NETPLAY.md).
+[netplay]
+require_cue = true
+required_tracks = 1
+required_disc_fp = "64ba917b5cbbc081bce33e9f9bb5afd0c3251cdcc131bb875ff85144ea4c69af"

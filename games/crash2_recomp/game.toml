@@ -1,0 +1,54 @@
+# Autofilled by tools/new_project_layout/probe_disc.py from your legal dump.
+# Review before shipping. Runtime quirks / overlay seeds still need hand work.
+
+[game]
+name = "Crash Bandicoot 2 - Cortex Strikes Back"
+id = "SCUS-94154"
+players = 1
+exe = "disc/SCUS_941.54"
+disc = "disc/Crash Bandicoot 2 - Cortex Strikes Back (USA).cue"
+load_address = "0x80010000"
+entry_pc = "0x80049B2C"
+text_size = "0x0004F800"
+stack_base = "0x801FFFF0"
+
+# Digests are for data Track 01 (first BINARY FILE / TRACK 01).
+[prepare_disc]
+out_dir = "disc"
+bin_name = "Crash Bandicoot 2 - Cortex Strikes Back (USA).bin"
+cue_name = "Crash Bandicoot 2 - Cortex Strikes Back (USA).cue"
+boot_exe = "SCUS_941.54"
+known_sizes = [192814608]
+known_md5 = [
+  "3c31b5e038f025098a2fdfa70c8213f2",
+]
+known_sha1 = [
+  "3d37fe4288a83b01f1a0edbf78e76e0fede6bc22",
+]
+known_crc32 = [
+  "395c0916",
+]
+
+[recompiler]
+seeds = "seeds/ghidra_funcs.txt"
+out_dir = "generated"
+strict = true
+
+[runtime]
+window_title = "Crash Bandicoot 2 - Cortex Strikes Back Recompiled"
+memcard_dir = "saves"
+overlay_cache = true
+
+[video]
+renderer = "opengl"
+aspect_ratio = "4:3"
+
+[controller]
+default_mode = "digital"
+
+# Online mount gate: digests + track count + optional TOC fingerprint
+# (see docs/NETPLAY.md).
+[netplay]
+require_cue = true
+required_tracks = 1
+required_disc_fp = "964989dafd7ab6837047de6ce83da6edb76b45078ea308af47c8789b7e0d4441"

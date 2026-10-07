@@ -1,0 +1,54 @@
+# Autofilled by tools/new_project_layout/probe_disc.py from your legal dump.
+# Review before shipping. Runtime quirks / overlay seeds still need hand work.
+
+[game]
+name = "Crash Bandicoot - Warped"
+id = "SCUS-94244"
+players = 1
+exe = "disc/SCUS_942.44"
+disc = "disc/Crash Bandicoot - Warped (USA).cue"
+load_address = "0x80010000"
+entry_pc = "0x800489F8"
+text_size = "0x00051000"
+stack_base = "0x801FFFF0"
+
+# Digests are for data Track 01 (first BINARY FILE / TRACK 01).
+[prepare_disc]
+out_dir = "disc"
+bin_name = "Crash Bandicoot - Warped (USA).bin"
+cue_name = "Crash Bandicoot - Warped (USA).cue"
+boot_exe = "SCUS_942.44"
+known_sizes = [285130608]
+known_md5 = [
+  "a66777800f028b8443d8a5e278ba69bd",
+]
+known_sha1 = [
+  "ae57f60f577c610476c7b8885bd76a6bea20d9de",
+]
+known_crc32 = [
+  "05e3012b",
+]
+
+[recompiler]
+seeds = "seeds/ghidra_funcs.txt"
+out_dir = "generated"
+strict = true
+
+[runtime]
+window_title = "Crash Bandicoot - Warped Recompiled"
+memcard_dir = "saves"
+overlay_cache = true
+
+[video]
+renderer = "opengl"
+aspect_ratio = "4:3"
+
+[controller]
+default_mode = "digital"
+
+# Online mount gate: digests + track count + optional TOC fingerprint
+# (see docs/NETPLAY.md).
+[netplay]
+require_cue = true
+required_tracks = 1
+required_disc_fp = "9e0ca49c367402ebeca0cbb9b50ac06e5b5127495e386042fdc75dbdcada0b7a"

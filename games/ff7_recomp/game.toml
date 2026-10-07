@@ -1,0 +1,69 @@
+# Autofilled by tools/new_project_layout/probe_disc.py from your legal dump.
+# Review before shipping. Runtime quirks / overlay seeds still need hand work.
+
+[game]
+name = "Final Fantasy VII Shinra Archaeology Cut"
+id = "SCUS-94163"
+players = 1
+exe = "disc/SCUS_941.63"
+# Verified as one program on N images (verify_disc_set.py).
+# Disc 1 boots; the rest are data. The runtime builds its disc
+# roster from this list and mounts the SELECTED one (remembered
+# in disc_index), so the launcher can switch discs between runs.
+# Swapping mid-session is MULTI_DISC.md P3 and is not implemented.
+discs = [
+    "disc/Final Fantasy 7 (Shinra Archaeology Cut v1.0.5)[Disc 1].cue",
+    "disc/Final Fantasy 7 (Shinra Archaeology Cut v1.0.5)[Disc 2].cue",
+    "disc/Final Fantasy 7 (Shinra Archaeology Cut v1.0.5)[Disc 3].cue",
+]
+load_address = "0x80010000"
+entry_pc = "0x800110C0"
+text_size = "0x00060800"
+stack_base = "0x801FFFF0"
+
+# Digests are for data Track 01 (first BINARY FILE / TRACK 01).
+[prepare_disc]
+out_dir = "disc"
+bin_name = "Final Fantasy 7 (Shinra Archaeology Cut v1.0.5)[Disc 1].bin"
+cue_name = "Final Fantasy 7 (Shinra Archaeology Cut v1.0.5)[Disc 1].cue"
+boot_exe = "SCUS_941.63"
+known_sizes = [742731024]
+known_md5 = [
+  "baf842ebe9e75ab1f50edb572e89b841",
+]
+known_sha1 = [
+  "d7525bb78c329c74b614e5af91dbe98e20591856",
+]
+known_crc32 = [
+  "e82c1d52",
+]
+
+[recompiler]
+seeds = "seeds/ghidra_funcs.txt"
+out_dir = "generated"
+strict = true
+
+[runtime]
+window_title = "Final Fantasy VII Shinra Archaeology Cut Recompiled"
+# FF7 streams most of its code (field, battle, world, menus) as overlays: run them through the overlay
+# cache (pre-compiled code) instead of the interpreter, as the reference recomp does.
+overlay_cache = true
+memcard_dir = "saves"
+
+[video]
+renderer = "opengl"
+aspect_ratio = "4:3"
+
+[controller]
+default_mode = "digital"
+# From the FF7 reference recomp (reference\Final-Fantasy-VII\game.toml): FF7 reads a digital pad; keep the
+# pad's reported type fixed (no hybrid analog flipping under the game's pad driver).
+lock_mode = true
+allow_hybrid = false
+
+# Online mount gate: digests + track count + optional TOC fingerprint
+# (see docs/NETPLAY.md).
+[netplay]
+require_cue = true
+required_tracks = 1
+required_disc_fp = "cbcc0d4f2503b4ffc69c53feb701bef5990bc5279dc13e65855bcd77b7d44d51"

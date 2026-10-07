@@ -1,0 +1,31 @@
+{
+  "cue_path": "F:\\recomp-backups\\recomps\\ff7_recomp\\disc\\Final Fantasy 7 (Shinra Archaeology Cut v1.0.5)[Disc 1].cue",
+  "cue_name": "Final Fantasy 7 (Shinra Archaeology Cut v1.0.5)[Disc 1].cue",
+  "bin_name": "Final Fantasy 7 (Shinra Archaeology Cut v1.0.5)[Disc 1].bin",
+  "track_count": 1,
+  "data_track_size": 742731024,
+  "data_track_md5": "baf842ebe9e75ab1f50edb572e89b841",
+  "data_track_sha1": "d7525bb78c329c74b614e5af91dbe98e20591856",
+  "data_track_crc32": "e82c1d52",
+  "boot_exe": "SCUS_941.63",
+  "serial": "SCUS-94163",
+  "serial_exe": "SCUS_941.63",
+  "volume_id": "FINALFANTASY7",
+  "display_name": "Final Fantasy 7 (Shinra Archaeology Cut v1.0.5)[Disc 1]",
+  "load_address": "0x80010000",
+  "entry_pc": "0x800110C0",
+  "text_size": "0x00060800",
+  "stack_base": "0x801FFFF0",
+  "require_cue": true,
+  "required_disc_fp": "cbcc0d4f2503b4ffc69c53feb701bef5990bc5279dc13e65855bcd77b7d44d51",
+  "boot_exe_sha256": "d71fbe6184e64bdb8f281126e86ea619ece8c58a80fbe69602d8b53db5601c60",
+  "seed_count": 623,
+  "warnings": [
+    "cue has only 1 TRACK \u2014 Track-01-only dumps fail multi-track netplay/catalog gates; prefer a full Redump cue."
+  ],
+  "notes": [
+    "entry_pc/load_address/text_size/stack_base taken from PS-X EXE header.",
+    "seeds are first-pass boot-EXE JAL targets (+ entry); expect to grow as overlays / runtime paths are discovered.",
+    "required_disc_fp is psxrecomp-toc-v1 (matches runtime DiscIdentity)."
+  ]
+}

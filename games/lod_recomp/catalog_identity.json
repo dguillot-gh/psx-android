@@ -1,0 +1,48 @@
+{
+  "format_version": 1,
+  "game": {
+    "name": "Legend of Dragoon, The (USA, Canada) (Disc 1)",
+    "id": "SCUS-94491",
+    "boot_exe": "SCUS_944.91"
+  },
+  "marketing": {
+    "description": "",
+    "publisher": "",
+    "year": "",
+    "region": "",
+    "players": 1
+  },
+  "rom_identity": {
+    "cue_name": "Legend of Dragoon, The (USA, Canada) (Disc 1).cue",
+    "bin_name": "Legend of Dragoon, The (USA, Canada) (Disc 1).bin",
+    "track_counts": [
+      1
+    ],
+    "require_cue": true,
+    "data_track": {
+      "size": 484951824,
+      "md5": "acf7717e2192c78d8c5859cfacfc384d",
+      "sha1": "8dfe525bd348531ac69f0a025e04ce08b8f6079f",
+      "crc32": "24cb8f5c"
+    },
+    "disc_fp": "64ba917b5cbbc081bce33e9f9bb5afd0c3251cdcc131bb875ff85144ea4c69af"
+  },
+  "exe": {
+    "load_address": "0x80188888",
+    "entry_pc": "0x801BF4E8",
+    "text_size": "0x0003E000",
+    "stack_base": "0x801FFFF0"
+  },
+  "seeds": {
+    "count": 73,
+    "source": "boot_exe_jal"
+  },
+  "warnings": [
+    "cue has only 1 TRACK \u2014 Track-01-only dumps fail multi-track netplay/catalog gates; prefer a full Redump cue."
+  ],
+  "notes": [
+    "entry_pc/load_address/text_size/stack_base taken from PS-X EXE header.",
+    "seeds are first-pass boot-EXE JAL targets (+ entry); expect to grow as overlays / runtime paths are discovered.",
+    "required_disc_fp is psxrecomp-toc-v1 (matches runtime DiscIdentity)."
+  ]
+}

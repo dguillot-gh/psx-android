@@ -1,0 +1,54 @@
+# Autofilled by tools/new_project_layout/probe_disc.py from your legal dump.
+# Review before shipping. Runtime quirks / overlay seeds still need hand work.
+
+[game]
+name = "Gex - Enter the Gecko"
+id = "SLUS-00598"
+players = 1
+exe = "disc/SLUS_005.98"
+disc = "disc/Gex - Enter the Gecko (USA).cue"
+load_address = "0x80010000"
+entry_pc = "0x8006B890"
+text_size = "0x00079800"
+stack_base = "0x801FFFF0"
+
+# Digests are for data Track 01 (first BINARY FILE / TRACK 01).
+[prepare_disc]
+out_dir = "disc"
+bin_name = "Gex - Enter the Gecko (USA).bin"
+cue_name = "Gex - Enter the Gecko (USA).cue"
+boot_exe = "SLUS_005.98"
+known_sizes = [266662704]
+known_md5 = [
+  "078092d2434011a12d5c56da4de0eeb4",
+]
+known_sha1 = [
+  "85d01c18d0087e09dea9abed4aa92148400d2614",
+]
+known_crc32 = [
+  "11650a57",
+]
+
+[recompiler]
+seeds = "seeds/ghidra_funcs.txt"
+out_dir = "generated"
+strict = true
+
+[runtime]
+window_title = "Gex - Enter the Gecko Recompiled"
+memcard_dir = "saves"
+overlay_cache = true
+
+[video]
+renderer = "opengl"
+aspect_ratio = "4:3"
+
+[controller]
+default_mode = "digital"
+
+# Online mount gate: digests + track count + optional TOC fingerprint
+# (see docs/NETPLAY.md).
+[netplay]
+require_cue = true
+required_tracks = 1
+required_disc_fp = "4187c1ed41841819ac5d1f524e602f111d61b0ecf989d0bf5e4d70bc7c45a289"

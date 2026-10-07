@@ -1,0 +1,31 @@
+{
+  "cue_path": "D:\\recomp-backups\\recomps\\gt2sim_recomp\\disc\\Gran Turismo 2 (USA) (Simulation Mode) (Rev 1).cue",
+  "cue_name": "Gran Turismo 2 (USA) (Simulation Mode) (Rev 1).cue",
+  "bin_name": "Gran Turismo 2 (USA) (Simulation Mode) (Rev 1).bin",
+  "track_count": 1,
+  "data_track_size": 680856960,
+  "data_track_md5": "36d8008a99299b236a32a6bf4702aac6",
+  "data_track_sha1": "5bd38f406bc9374335ce9f0e13b546acd64164d3",
+  "data_track_crc32": "79233562",
+  "boot_exe": "SCUS_944.88",
+  "serial": "SCUS-94488",
+  "serial_exe": "SCUS_944.88",
+  "volume_id": "GRANTURISMO2",
+  "display_name": "Gran Turismo 2 (USA) (Simulation Mode) (Rev 1)",
+  "load_address": "0x80010000",
+  "entry_pc": "0x8005D5C0",
+  "text_size": "0x00099000",
+  "stack_base": "0x00000000",
+  "require_cue": true,
+  "required_disc_fp": "01ee5c4a52aa6625382bf1b18beb32eccc46ec23ebcf3515433a7f2a88206313",
+  "boot_exe_sha256": "5e336e636bc00f43dc53b27f990867c314f8d78c25706ec7a08967568c0d789c",
+  "seed_count": 666,
+  "warnings": [
+    "cue has only 1 TRACK \u2014 Track-01-only dumps fail multi-track netplay/catalog gates; prefer a full Redump cue."
+  ],
+  "notes": [
+    "entry_pc/load_address/text_size/stack_base taken from PS-X EXE header.",
+    "seeds are first-pass boot-EXE JAL targets (+ entry); expect to grow as overlays / runtime paths are discovered.",
+    "required_disc_fp is psxrecomp-toc-v1 (matches runtime DiscIdentity)."
+  ]
+}

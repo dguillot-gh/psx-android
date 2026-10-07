@@ -1,0 +1,48 @@
+{
+  "format_version": 1,
+  "game": {
+    "name": "Crash Bandicoot 2 - Cortex Strikes Back",
+    "id": "SCUS-94154",
+    "boot_exe": "SCUS_941.54"
+  },
+  "marketing": {
+    "description": "",
+    "publisher": "",
+    "year": "",
+    "region": "",
+    "players": 1
+  },
+  "rom_identity": {
+    "cue_name": "Crash Bandicoot 2 - Cortex Strikes Back (USA).cue",
+    "bin_name": "Crash Bandicoot 2 - Cortex Strikes Back (USA).bin",
+    "track_counts": [
+      1
+    ],
+    "require_cue": true,
+    "data_track": {
+      "size": 192814608,
+      "md5": "3c31b5e038f025098a2fdfa70c8213f2",
+      "sha1": "3d37fe4288a83b01f1a0edbf78e76e0fede6bc22",
+      "crc32": "395c0916"
+    },
+    "disc_fp": "964989dafd7ab6837047de6ce83da6edb76b45078ea308af47c8789b7e0d4441"
+  },
+  "exe": {
+    "load_address": "0x80010000",
+    "entry_pc": "0x80049B2C",
+    "text_size": "0x0004F800",
+    "stack_base": "0x801FFFF0"
+  },
+  "seeds": {
+    "count": 746,
+    "source": "boot_exe_jal"
+  },
+  "warnings": [
+    "cue has only 1 TRACK \u2014 Track-01-only dumps fail multi-track netplay/catalog gates; prefer a full Redump cue."
+  ],
+  "notes": [
+    "entry_pc/load_address/text_size/stack_base taken from PS-X EXE header.",
+    "seeds are first-pass boot-EXE JAL targets (+ entry); expect to grow as overlays / runtime paths are discovered.",
+    "required_disc_fp is psxrecomp-toc-v1 (matches runtime DiscIdentity)."
+  ]
+}

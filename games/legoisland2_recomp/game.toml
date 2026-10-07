@@ -1,0 +1,54 @@
+# Autofilled by tools/new_project_layout/probe_disc.py from your legal dump.
+# Review before shipping. Runtime quirks / overlay seeds still need hand work.
+
+[game]
+name = "LEGO Island 2 - The Brickster's Revenge"
+id = "SLUS-01246"
+players = 1
+exe = "disc/SLUS_012.46"
+disc = "disc/LEGO Island 2 - The Brickster's Revenge (USA).cue"
+load_address = "0x80010000"
+entry_pc = "0x8001BE20"
+text_size = "0x0006C800"
+stack_base = "0x801FFFF0"
+
+# Digests are for data Track 01 (first BINARY FILE / TRACK 01).
+[prepare_disc]
+out_dir = "disc"
+bin_name = "LEGO Island 2 - The Brickster's Revenge (USA).bin"
+cue_name = "LEGO Island 2 - The Brickster's Revenge (USA).cue"
+boot_exe = "SLUS_012.46"
+known_sizes = [233605344]
+known_md5 = [
+  "d72539f30724d50c567452eade0a7bf5",
+]
+known_sha1 = [
+  "bcd18098aa04a2b562efd3488ffc2bd9ab33032a",
+]
+known_crc32 = [
+  "82bdc37b",
+]
+
+[recompiler]
+seeds = "seeds/ghidra_funcs.txt"
+out_dir = "generated"
+strict = true
+
+[runtime]
+window_title = "LEGO Island 2 - The Brickster's Revenge Recompiled"
+memcard_dir = "saves"
+overlay_cache = true
+
+[video]
+renderer = "opengl"
+aspect_ratio = "4:3"
+
+[controller]
+default_mode = "digital"
+
+# Online mount gate: digests + track count + optional TOC fingerprint
+# (see docs/NETPLAY.md).
+[netplay]
+require_cue = true
+required_tracks = 1
+required_disc_fp = "985e5c3ba608c318eb8361c7c71b81050e8e8b0551b810058feda0f4eea975f0"
