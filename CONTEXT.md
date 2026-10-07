@@ -194,3 +194,30 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
   4. Audio dies after another app interrupts a game (relaunch fixes it).
   5. play-test reports DISPLAY fps; switch it to the in-game [FPS] lines (logged when the FPS counter is on).
   6. Policenauts + Tomba 2 pre-compile still has unfinished groups (45-min limit); next -Speed run continues.
+
+## 2026-10-07 (Surface) — framework moved to upstream master; 10 new games
+- **framework\psxrecomp branch `android` = upstream master 8077e710 + our Android work** (merge 5ff292a5,
+  fixes bf4c2f72). The old branch is tag `android-pre-upstream`. Work-PC copy must be re-synced from this.
+  Merge choices: upstream's disc roster (cdrom_disc_select) is used; our `cdrom_swap_disc(path)` is now a
+  wrapper over it. Kept: inlined cycle charge, interrupt fast path (+ upstream frozen-time guard), single
+  dispatch validation, GLES renderer + hr FBO fix, Android CMake, overlay cross-compile (target_os_tag maps
+  android -> linux; interpreter-arch check skipped for android). DROPPED for now (upstream rewrote that
+  code): dense game-dispatch index and the BIOS key-page fast route — port into
+  recompiler/src/game_dispatch_emitter.cpp if speed is worse than before. Mouse (Policenauts) hooks into
+  upstream's drain_host_events(). Android: g_fullscreen forced 0 + FULLSCREEN_DESKTOP flag.
+- **Codegen hash is now 6d3e857a** (every game's pre-compiled overlays rebuild).
+- **Recompiler is built on this PC** with portable llvm-mingw (tools-cache\llvm-mingw, release 20260922)
+  and the SDK's cmake 3.22.1: needs `-DPSXRECOMP_ENABLE_CHD=OFF` and CMAKE_CXX_FLAGS forcing the std
+  headers (`-include cstdlib -include cstdio -include cstring -include cstdint -include exception
+  -include algorithm -include functional -include memory -include string -include vector -include utility
+  -include limits`); copy libc++.dll + libunwind.dll next to the exe. Old exe: tools-cache\
+  recompiler-build-mingw-pre-upstream.
+- go.ps1: `-Framework <dir>` (test a framework copy, with `-WorkDir` elsewhere); existing games now get the
+  framework by robocopy /MIR (no stale files). make-game-toml-in.ps1: a probe-made game with only
+  `disc = "..."` gets one @@DISC1@@ slot (Einhander quit "no disc image selected" before).
+  play-test summary now leads with GAME fps from the runtime's [FPS] log lines (needs the FPS counter on).
+- **New games (recomps\, from to-do\):** einhander (seeds = strider973/Einhander-Recompiled, same disc
+  md5), atvracers, crash2, crash3 (Warped), gex, gex2, gex3, gt2arcade + gt2sim (separate apps: each disc
+  boots its own EXE), legoisland2, lod (4 discs). Einhander verified booting/playing on the phone (debug
+  build). The rest: first boots pending.
+- Phone is on USB debugging now (wired).
