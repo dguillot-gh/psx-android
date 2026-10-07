@@ -14,9 +14,11 @@ foreach ($l in Get-Content (Join-Path $dest "game.toml")) {
 }
 $short = ($Name -replace '_recomp$','').ToLower() -replace '[^a-z0-9]',''
 $title = $v["game.name"] -replace '(\s*\([^)]*\))+$',''
+# Android string resources need an apostrophe escaped as \' (LEGO Island 2 "Brickster's", 2026-10-07).
+$resTitle = $title.Replace("'", "\'")
 $exe = Split-Path $v["game.exe"] -Leaf
 $project = $short.Substring(0,1).ToUpper() + $short.Substring(1) + "Recomp"
-$ng = @{ GameName=$Name; PackageId="com.psxrecomp.$short"; GameId=$v["game.id"]; Title=$title; OutDir=$dest }
+$ng = @{ GameName=$Name; PackageId="com.psxrecomp.$short"; GameId=$v["game.id"]; Title=$resTitle; OutDir=$dest }
 if ($v["controller.default_mode"] -eq "analog") { $ng.AnalogSticks = $true }
 & (Join-Path $PSScriptRoot "new-game.ps1") @ng
 & (Join-Path $PSScriptRoot "make-game-toml-in.ps1") -GameToml (Join-Path $dest "game.toml") -Out (Join-Path $dest "android\app\src\main\assets\game.toml.in")
