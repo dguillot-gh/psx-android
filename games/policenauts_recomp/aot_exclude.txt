@@ -1,7 +1,0 @@
-# Pre-compiled code slots NOT bundled into the app (they stay on the interpreter).
-# One RAM slot per line (the shard file prefix). Read by the app build (stageGameOverlays).
-# 0006C000: 2026-10-02 bisect: a shard in the ITP/MENU/ENGLISH/SUBS1 slot (0x8006CEE8) draws the
-#           opening "POLICENAUTS" logo background as garbage and hangs the game. Not root-caused.
-# 00012000: the main-EXE group; its pre-compile was never finished or checked on the phone.
-0006C000
-00012000

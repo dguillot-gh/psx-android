@@ -1,0 +1,61 @@
+[submodule "games/atvracers_recomp"]
+	path = games/atvracers_recomp
+	url = https://github.com/dguillot-gh/atvracers-android.git
+[submodule "games/crash2_recomp"]
+	path = games/crash2_recomp
+	url = https://github.com/dguillot-gh/crash2-android.git
+[submodule "games/crash3_recomp"]
+	path = games/crash3_recomp
+	url = https://github.com/dguillot-gh/crash3-android.git
+[submodule "games/einhander_recomp"]
+	path = games/einhander_recomp
+	url = https://github.com/dguillot-gh/einhander-android.git
+[submodule "games/ff7_recomp"]
+	path = games/ff7_recomp
+	url = https://github.com/dguillot-gh/ff7-android.git
+[submodule "games/gex2_recomp"]
+	path = games/gex2_recomp
+	url = https://github.com/dguillot-gh/gex2-android.git
+[submodule "games/gex3_recomp"]
+	path = games/gex3_recomp
+	url = https://github.com/dguillot-gh/gex3-android.git
+[submodule "games/gex_recomp"]
+	path = games/gex_recomp
+	url = https://github.com/dguillot-gh/gex-android.git
+[submodule "games/gt2arcade_recomp"]
+	path = games/gt2arcade_recomp
+	url = https://github.com/dguillot-gh/gt2arcade-android.git
+[submodule "games/gt2sim_recomp"]
+	path = games/gt2sim_recomp
+	url = https://github.com/dguillot-gh/gt2sim-android.git
+[submodule "games/legoisland2_recomp"]
+	path = games/legoisland2_recomp
+	url = https://github.com/dguillot-gh/legoisland2-android.git
+[submodule "games/lod_recomp"]
+	path = games/lod_recomp
+	url = https://github.com/dguillot-gh/lod-android.git
+[submodule "games/parasite_eve2_recomp"]
+	path = games/parasite_eve2_recomp
+	url = https://github.com/dguillot-gh/parasite-eve2-android.git
+[submodule "games/parasite_eve_recomp"]
+	path = games/parasite_eve_recomp
+	url = https://github.com/dguillot-gh/parasite-eve-android.git
+[submodule "framework"]
+	path = framework
+	url = https://github.com/dguillot-gh/psxrecomp-android.git
+	branch = android
+[submodule "games/persona2_recomp"]
+	path = games/persona2_recomp
+	url = https://github.com/dguillot-gh/persona2-android.git
+[submodule "games/persona_recomp"]
+	path = games/persona_recomp
+	url = https://github.com/dguillot-gh/persona-android.git
+[submodule "games/policenauts_recomp"]
+	path = games/policenauts_recomp
+	url = https://github.com/dguillot-gh/policenauts-android.git
+[submodule "games/tomba2_recomp"]
+	path = games/tomba2_recomp
+	url = https://github.com/dguillot-gh/tomba2-android.git
+[submodule "games/tomba_recomp"]
+	path = games/tomba_recomp
+	url = https://github.com/dguillot-gh/tomba-android.git
