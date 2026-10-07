@@ -180,3 +180,17 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
   re-enable dual-source via GL_EXT_blend_func_extended (Mali has it), batch uploads, then a threaded
   renderer. **Pinned: multi-core** = GPU submission thread ("threaded rendering"), then SPU and MDEC
   threads; game code itself stays single-threaded. Check upstream master for existing threading first.
+- **End of 2026-10-06 (Surface):** framework branch `android` = 41dc4e4 (merge of gpu-gles: GLES renderer
+  option, default software; tile-GPU fix 2b). All 8 games rebuilt from it and installed (apks\2026-10-06,
+  16:57-19:35 builds). Tomba 1+2 set to GPU 2x by the user; profiler (files/runtime_env) removed everywhere.
+  **Open, pinned for next session:**
+  1. Policenauts is slow in its opening on software (in-game 29-44 fps, 0.5-0.7x) despite ~1,480 AOT
+     pieces; the old fast build held 60 there. Profile with files/runtime_env PSX_RUNTIME_PERF_DIAG=1
+     while the user plays (dirty/interp counts, which slots run interpreted; 0006C000/00012000 excluded).
+  2. Verify GPU step 2b (keep hr FBO bound) in Tomba 2 GAMEPLAY at 4x (intro already 60).
+  3. 16:9 toggle ("route 1"): drop the PSX mod-owned widescreen clamp in our fork for [video] aspect_ratio,
+     un-hide the menu row, check letterboxing on software + GPU; then rebuild all (~1.5 h). Route 2 later:
+     mstan's tuned Tomba 1/2 widescreen mods.
+  4. Audio dies after another app interrupts a game (relaunch fixes it).
+  5. play-test reports DISPLAY fps; switch it to the in-game [FPS] lines (logged when the FPS counter is on).
+  6. Policenauts + Tomba 2 pre-compile still has unfinished groups (45-min limit); next -Speed run continues.
