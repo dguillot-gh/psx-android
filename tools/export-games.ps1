@@ -38,8 +38,10 @@ $GameStatus = @{
 $later = Join-Path $DriveRoot "recomps-later"
 foreach ($g in @(Get-ChildItem $recomps -Directory) + @(Get-ChildItem $later -Directory -ErrorAction SilentlyContinue)) {
     $dest = Join-Path $out $g.Name
-    if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }   # a fresh copy each time (our own export)
+    # A fresh copy each time (our own export). games\<name> is the game's own git repository (a submodule):
+    # keep its .git link and .gitignore, replace everything else.
     New-Item -ItemType Directory -Force $dest | Out-Null
+    Get-ChildItem $dest -Force | Where-Object { $_.Name -notin ".git", ".gitignore" } | Remove-Item -Recurse -Force
     foreach ($f in $files) {
         $src = Join-Path $g.FullName $f
         if (Test-Path -LiteralPath $src -PathType Leaf) { Copy-Item -LiteralPath $src $dest }

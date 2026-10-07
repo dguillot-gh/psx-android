@@ -221,3 +221,27 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
   boots its own EXE), legoisland2, lod (4 discs). Einhander verified booting/playing on the phone (debug
   build). The rest: first boots pending.
 - Phone is on USB debugging now (wired).
+- **Batch result (2026-10-07, all on the new framework, installed with saves backed up):** einhander, ff7,
+  parasite_eve, parasite_eve2, persona, persona2, policenauts, tomba, tomba2, atvracers, crash2, crash3,
+  legoisland2. 30 s tests: 60 fps einhander/pe/persona/tomba/tomba2, ~60 persona2, ~50 ff7 opening, ~30
+  policenauts opening (known). Save states from before the switch don't load (new code); new ones work (ATV).
+  Speed step hit its cap for policenauts (45), persona (45), tomba2 (15, -SpeedMinutes): next run continues.
+- **Not built:** gt2sim + lod (and probably gt2arcade): the boot EXE is mostly data (740 "reserved opcode"
+  words across 0x80011E30-0x800A8AA0 in GT2); hundreds of "functions" start inside data and run to its end, so
+  the recompiler emits ~1000 shards x 5 MB (5 GB of C) and the PC runs out of memory. Needs a data-range
+  fix (no such option in game.toml today) or real code boundaries. Set aside in ..\recomps-later\ with the
+  three Gex games (user's choice); gt2sim stays in recomps\ but out of runs.
+- **Pipeline fixes today:** port-game escapes apostrophes in the app name (LEGO Island 2 "Brickster's");
+  phone.ps1 starts the adb server DETACHED (an adb server started inside `pwsh ... | Out-Host` inherited the
+  pipe and hung speed.ps1 45 min); go.ps1 -Game takes a comma list, -NoInstall, -SpeedMinutes;
+  tools\phone-pass.ps1 (install + disc + card + test for built games). Portable pwsh 7 segfaulted twice
+  with two go.ps1 runs side by side: run long batches as one go.ps1 per game.
+- **GitHub (account dguillot-gh, all private):** psxrecomp-android (framework, default branch android, tag
+  android-pre-upstream, Actions DISABLED so upstream's desktop CI doesn't run), one repo per game
+  (<name>-android, from games\<name>, strict .gitignore), psx-android (this repo; games\ and framework\ as
+  submodules). gh CLI portable in tools-cache\gh (signed in by the user; scopes repo, workflow). Push with
+  `git -c credential.helper= -c "credential.helper=!<gh.exe> auth git-credential" push` (no global config).
+  Co-worker flow: README.md (clone --recursive, go.ps1 -Game x -Disc <their cue>); new-recomp.ps1 uses the
+  repo's games\<name> setup and only takes disc names from their copy; build-recompiler.ps1 self-builds.
+- **Pinned (user):** shareable APK with no game code that builds the game on the phone from the user's disc
+  (like Matteo842/CrashBandicoot-Launcher, ZeldaWWHDRecomp); later GitHub Actions builds it as a Release.
