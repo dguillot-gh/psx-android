@@ -56,6 +56,31 @@ if (Test-Path $sharedKey) {
 } else {
     Write-Host "NOTE: no shared signing key on the drive yet (run tools\setup.ps1 on the home PC); using this PC's own key"
 }
+# SDL3 source: download it ONCE into tools-cache\deps (checked against the framework's pinned SHA-256) and
+# point every build at it (PSX_SDL3_SOURCE_DIR, read by the framework's runtime.cmake). Before this, every game
+# downloaded SDL itself, and a short internet drop failed the build (Gex 2, 2026-10-07).
+$manifest = Join-Path $GameDir "psxrecomp\third_party\deps.manifest"
+$sdlLine = if (Test-Path $manifest) { Get-Content $manifest | Where-Object { $_ -match '^SDL3\s' } | Select-Object -First 1 }
+if ($sdlLine) {
+    $f = $sdlLine -split '\s+'          # name, file, sha256, url
+    $deps = Join-Path $ToolsCache "deps"
+    $sdlDir = Join-Path $deps ($f[1] -replace '\.tar\.gz$', '')
+    if (-not (Test-Path (Join-Path $sdlDir "CMakeLists.txt"))) {
+        New-Item -ItemType Directory -Force $deps | Out-Null
+        $tgz = Join-Path $deps $f[1]
+        for ($try = 1; $try -le 5 -and -not (Test-Path $tgz); $try++) {
+            Write-Host "Downloading $($f[1]) once for all builds (try $try)..."
+            try { Invoke-WebRequest $f[3] -OutFile $tgz -UseBasicParsing } catch { Remove-Item $tgz -ErrorAction SilentlyContinue; Start-Sleep -Seconds (15 * $try) }
+        }
+        if ((Test-Path $tgz) -and (Get-FileHash $tgz -Algorithm SHA256).Hash -eq $f[2].ToUpper()) {
+            & (Join-Path $env:SystemRoot "System32	ar.exe") -xzf $tgz -C $deps   # Windows tar (Git's tar misreads D: paths)
+        } else {
+            Remove-Item $tgz -ErrorAction SilentlyContinue
+            Write-Host "NOTE: could not get a verified SDL3 copy; the build will try to download it itself"
+        }
+    }
+    if (Test-Path (Join-Path $sdlDir "CMakeLists.txt")) { $env:PSX_SDL3_SOURCE_DIR = $sdlDir; Write-Host "SDL3 from $sdlDir (no download)" }
+}
 Write-Host "Building (the first build takes 30-60 minutes; later ones are much faster)..."
 $log = Join-Path $GameDir "build-android.log"
 $progress = Join-Path (Split-Path -Parent $PSScriptRoot) "progress.log"   # go.ps1's log, shown by watch.ps1

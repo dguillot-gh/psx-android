@@ -261,7 +261,11 @@ if ($built.Count -and -not $NoPhone -and -not $NoInstall) {
             pwsh -NoProfile -File tools\phone.ps1 -Action install -Package $b.Package -Apk $b.Apk
             if ($LASTEXITCODE -ne 0) { Say "PHONE: FAILED installing $($b.Package)"; $results += "phone : FAIL installing $($b.Package) (see above)"; continue }
             $results += "phone : installed $($b.Package)"
-            if (-not $NoDiscPush) {
+            # Skip the copy when the app already holds its disc (files/gamedata): a Download copy is then
+            # only wasted phone space (the phone filled up on 2026-10-07).
+            $hasDisc = @(& (Find-Adb) shell "run-as $($b.Package) ls files/gamedata 2>/dev/null" | Where-Object { $_ -match '\.cue\s*$' }).Count
+            if ($hasDisc) { Say "PHONE: $($b.Game) already has its disc inside the app; not copying it again" }
+            if (-not $NoDiscPush -and -not $hasDisc) {
                 # The app asks for the disc image on first launch; put it where the file picker looks.
                 Say "PHONE: copying the disc for $($b.Game) to Download\$($b.Game)"
                 pwsh -NoProfile -File tools\phone.ps1 -Action push-disc -Folder (Join-Path (Join-Path $WorkDir $b.Game) "disc") -Name $b.Game

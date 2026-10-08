@@ -4,9 +4,10 @@
 #   pwsh -File tools\build-recompiler.ps1 -Force     (rebuild)
 # Uses the portable llvm-mingw C++ compiler (downloaded once into tools-cache\llvm-mingw, ~190 MB) and the
 # Android SDK's CMake + Ninja (tools\setup.ps1 installs those). Nothing is installed into Windows.
-param([switch]$Force)
+param([switch]$Force, [string]$Framework = "")   # -Framework: another engine copy (easy\10-update-psxrecomp.ps1)
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "paths.ps1")
+if ($Framework) { $FrameworkDir = $Framework }
 $src = Join-Path $FrameworkDir "recompiler"
 $out = Join-Path $src "build-mingw"
 $exe = Join-Path $out "psxrecomp-game.exe"

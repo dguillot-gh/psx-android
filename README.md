@@ -97,6 +97,10 @@ that made them**: after an app update, make new ones.
   generated code, or `tools-cache\debug.keystore` (the signing key). The `.gitignore` files keep them out.
 - **Non-commercial use only**: psxrecomp is under the PolyForm Noncommercial license.
 
+## On the build PC: the easy menu
+All routine jobs (build, add a game, install, overnight speed, saves, phone storage, GitHub, engine update)
+are in **`easy\MENU.ps1`** (right-click > Run with PowerShell). See `easy\README.md`.
+
 ## For maintainers
 - `START-HERE.md`: the step-by-step guide on the build PC; `CONTEXT.md`: running notes and decisions;
   `PS1-RECOMP-ANDROID-HANDBOOK.md`: deep reference; `LOCAL-MODEL.md`: the local-model task system.

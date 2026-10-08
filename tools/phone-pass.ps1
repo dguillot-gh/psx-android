@@ -32,9 +32,17 @@ foreach ($g in @($Game -split "," | ForEach-Object { $_.Trim() } | Where-Object 
     pwsh -NoProfile -File tools\phone.ps1 -Action install -Package $pkg -Apk $apk.FullName
     if ($LASTEXITCODE -ne 0) { Say "PHONE: FAILED installing $pkg"; $results += "$g : FAIL install"; continue }
     $gameDir = Join-Path $WorkDir $g
-    Say "PHONE: copying the disc for $g to Download\$g"
-    pwsh -NoProfile -File tools\phone.ps1 -Action push-disc -Folder (Join-Path $gameDir "disc") -Name $g
-    if ($LASTEXITCODE -ne 0) { Say "PHONE: FAILED copying the disc for $g"; $results += "$g : FAIL disc copy"; continue }
+    # The app copies its disc into its own storage (files/gamedata) when the disc is picked; after that a
+    # Download copy is only wasted phone space (the phone filled up on 2026-10-07).
+    $adb = Find-Adb
+    $hasDisc = @(& $adb shell "run-as $pkg ls files/gamedata 2>/dev/null" | Where-Object { $_ -match '\.cue\s*$' }).Count
+    if ($hasDisc) {
+        Say "PHONE: $g already has its disc inside the app; not copying it again"
+    } else {
+        Say "PHONE: copying the disc for $g to Download\$g"
+        pwsh -NoProfile -File tools\phone.ps1 -Action push-disc -Folder (Join-Path $gameDir "disc") -Name $g
+        if ($LASTEXITCODE -ne 0) { Say "PHONE: FAILED copying the disc for $g"; $results += "$g : FAIL disc copy"; continue }
+    }
     $mcd = Get-ChildItem (Join-Path $gameDir "memcard-import") -Filter *.mcd -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -First 1
     if ($mcd) {
         pwsh -NoProfile -File tools\phone.ps1 -Action import-card -Package $pkg -Card $mcd.FullName -Slot 1
