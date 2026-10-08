@@ -24,7 +24,8 @@ function Ask-YesNo([string]$q, [bool]$default = $false) {
     return $a.Trim().ToLower().StartsWith("y")
 }
 
-function Pause-End { Write-Host ""; Read-Host "Done. Press Enter to close" | Out-Null }
+# PSX_GUI: run by PSX Manager (no console to wait in).
+function Pause-End { if ($env:PSX_GUI) { return }; Write-Host ""; Read-Host "Done. Press Enter to close" | Out-Null }
 
 # Package id of a game folder name, exactly as go.ps1 makes it.
 function Get-Package([string]$game) { "com.psxrecomp." + (($game -replace '_recomp$', '').ToLower() -replace '[^a-z0-9]', '') }

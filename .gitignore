@@ -18,3 +18,6 @@ progress.log
 # Memory-card and app-data backups stay on the drive, never in git.
 saves-backup/
 __pycache__/
+# PSX Manager build output (the published exe lives at <drive>\PSX-Manager, outside the repo)
+gui/PsxManager/bin/
+gui/PsxManager/obj/
