@@ -35,11 +35,29 @@ $cxxFlags = "-include cstdlib -include cstdio -include cstring -include cstdint 
             "-include algorithm -include functional -include memory -include string -include vector " +
             "-include utility -include limits"
 Write-Host "Building the recompiler (about 5-10 minutes)..."
+# A build folder copied from another place (the USB drive -> the build PC) remembers its old paths, and CMake
+# refuses it ("CMakeCache.txt directory ... is different"): start that folder's configuration afresh.
+$cache = Join-Path $out "CMakeCache.txt"
+if (Test-Path $cache) {
+    $cachedSrc = (Select-String -Path $cache -Pattern '^CMAKE_HOME_DIRECTORY:INTERNAL=(.*)$' | Select-Object -First 1).Matches.Groups[1].Value
+    if ($cachedSrc -and ($cachedSrc.TrimEnd('/') -ne ($src -replace '\\', '/').TrimEnd('/'))) {
+        Write-Host "The recompiler's build folder was set up at $cachedSrc; configuring it afresh here"
+        Remove-Item $cache -Force
+        Remove-Item (Join-Path $out "CMakeFiles") -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+# On failure, show the end of the log here (it lands in the GitHub Actions log on the build PC).
+function Fail-WithLog([string]$what, [string]$log) {
+    Write-Host "FAIL: $what (see $log). Last lines:"
+    Get-Content $log -Tail 25 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
+    exit 1
+}
+$cfgLog = Join-Path $src "build-mingw-configure.log"; $buildLog = Join-Path $src "build-mingw-build.log"
 & cmake -S $src -B $out -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ `
-    -DPSXRECOMP_ENABLE_CHD=OFF "-DCMAKE_CXX_FLAGS=$cxxFlags" *> (Join-Path $src "build-mingw-configure.log")
-if ($LASTEXITCODE -ne 0) { Write-Host "FAIL: configure (see $src\build-mingw-configure.log)"; exit 1 }
-& cmake --build $out --target psxrecomp-game *> (Join-Path $src "build-mingw-build.log")
-if ($LASTEXITCODE -ne 0) { Write-Host "FAIL: build (see $src\build-mingw-build.log)"; exit 1 }
+    -DPSXRECOMP_ENABLE_CHD=OFF "-DCMAKE_CXX_FLAGS=$cxxFlags" *> $cfgLog
+if ($LASTEXITCODE -ne 0) { Fail-WithLog "configure" $cfgLog }
+& cmake --build $out --target psxrecomp-game *> $buildLog
+if ($LASTEXITCODE -ne 0) { Fail-WithLog "build" $buildLog }
 # The exe needs llvm-mingw's C++ runtime DLLs beside it.
 foreach ($dll in "libc++.dll", "libunwind.dll") {
     Copy-Item (Join-Path $LlvmMingw "x86_64-w64-mingw32\bin\$dll") $out -Force
