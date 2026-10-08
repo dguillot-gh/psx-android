@@ -187,6 +187,17 @@ foreach ($g in $games) {
         & $exe --config game.toml *> (Join-Path $gameDir "regen.log")
         $code = $LASTEXITCODE
         Pop-Location
+        # A regen that makes FEWER split files (a recompiler fix: GT2 2026-10-08, 378 -> 26) leaves
+        # the higher-numbered old ones behind, and the build compiles them too. Remove them.
+        # (Unchanged files are not rewritten, so their dates can't be used; the log's count can.)
+        if ($code -eq 0) {
+            $wrote = Select-String (Join-Path $gameDir "regen.log") -Pattern 'Wrote (\d+) shards .* for (\S+)'
+            foreach ($w in $wrote) {
+                $n = [int]$w.Matches[0].Groups[1].Value; $stem = $w.Matches[0].Groups[2].Value
+                Get-ChildItem $gen -Filter "$($stem)_full_*.c" | Where-Object {
+                    $_.Name -match '_full_(\d+)\.c$' -and [int]$Matches[1] -ge $n } | Remove-Item -Force
+            }
+        }
         if ($code -eq 0) {
             Set-Content $marker (Get-Date -Format s)
             Say "REGEN: done"
