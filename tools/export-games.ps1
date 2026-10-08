@@ -53,6 +53,14 @@ foreach ($g in @(Get-ChildItem $recomps -Directory) + @(Get-ChildItem $later -Di
             Get-ChildItem (Join-Path $dest $d) -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
         }
     }
+    # No paths from our PCs in the repositories (they may be public): an absolute disc path in game.toml
+    # ("G:/ps1 ports/.../Game (USA).cue", only a note of where the disc was first read from) keeps its file name.
+    $tomlOut = Join-Path $dest "game.toml"
+    if (Test-Path $tomlOut) {
+        $t = Get-Content $tomlOut -Raw
+        $t2 = [regex]::Replace($t, '"[A-Za-z]:[/\\][^"]*[/\\]([^"/\\]+)"', '"$1"')
+        if ($t2 -ne $t) { Set-Content $tomlOut $t2 -Encoding utf8NoBOM -NoNewline }
+    }
     $cap = Join-Path $work "$($g.Name)\build-android-overlays\play_captures.json"
     if (Test-Path $cap) { Copy-Item $cap (Join-Path $dest "play_captures.json") }
 

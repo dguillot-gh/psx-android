@@ -277,3 +277,7 @@ serial; GitHub Actions releases + Obtainium. (19) upstream PR of the Android lay
 - go.ps1 got -NoTasks (skip the local-model task cards). `tools/setup-runner.ps1`: MinGit if no git, gh login,
   runner download (SHA-256 checked), registration, Windows service as the user's account, .env.
 - Public repos later: move the button + Releases to a separate PRIVATE repo first (runner + game-code APKs).
+- Later the same day: the button, runner and Releases MOVED to the PRIVATE repo dguillot-gh/psx-android-builds
+  (workflow there; secret PSX_KEYSTORE_B64 there; ci-build releases to RELEASE_REPO). psx-android, the engine
+  and the game repos can then go public (user's call). export-games.ps1 strips absolute disc paths from
+  game.toml (6 game repos cleaned 2026-10-08). move-to-nas.ps1 / setup-vm.ps1 retire the USB drive (RUNNER.md).

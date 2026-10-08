@@ -6,7 +6,7 @@
 #  1. Portable git (MinGit) into tools-cache\mingit, if this PC has no git.
 #  2. Signs the GitHub CLI in (once; a code to type at github.com/login/device).
 #  3. Downloads GitHub's runner into <folder>\actions-runner (checked against GitHub's published SHA-256).
-#  4. Registers it with dguillot-gh/psx-android (label psx-build) and installs it as a Windows service that
+#  4. Registers it with dguillot-gh/psx-android-builds (private; label psx-build) and installs it as a Windows service that
 #     runs as YOUR Windows account (it asks for your Windows password: that account's GitHub sign-in and
 #     saved NAS password are what the builds use), so it starts by itself after a reboot.
 #  5. Tells the runner where things are (actions-runner\.env): this folder, and the discs on the NAS.
@@ -20,7 +20,7 @@ param(
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "paths.ps1")
 $gh = Join-Path $ToolsCache "gh\bin\gh.exe"
-$repo = "dguillot-gh/psx-android"
+$repo = "dguillot-gh/psx-android-builds"   # the PRIVATE repository with the Build APK button (never a public one)
 $runnerDir = Join-Path $DriveRoot "actions-runner"
 function Step([string]$m) { Write-Host ""; Write-Host "== $m" -ForegroundColor Cyan }
 function Get-ReleaseAsset([string]$apiRepo, [string]$pattern) {

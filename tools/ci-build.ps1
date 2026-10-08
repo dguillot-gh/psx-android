@@ -6,7 +6,7 @@
 #    names in game.toml stay this PC's own). Discs never move: they are already on this PC.
 # 2. Rebuilds the recompiler when the engine update changed it.
 # 3. go.ps1 -NoPhone -NoTasks (no phone, no local model), at low priority so the PC stays usable.
-# 4. -Release: uploads the new APKs to a private GitHub Release of psx-android (RELEASE_TOKEN from the workflow).
+# 4. -Release: uploads the new APKs to a Release of the private psx-android-builds (RELEASE_TOKEN/RELEASE_REPO from its workflow).
 # -Clean: removes each game's work folder afterwards (frees 1-5 GB per game; the next build starts from scratch).
 # Signing: the workflow puts the shared key in a temporary file and passes it as PSX_KEYSTORE (build.ps1).
 param(
@@ -161,7 +161,7 @@ $apks | ForEach-Object { Write-Host "  $($_.Name)  ($([math]::Round($_.Length / 
 if ($missing.Count) { Write-Host "  no APK for: $($missing -join ', ') (see the log above)" }
 
 # --- 4. Release -----------------------------------------------------------------------------------------------
-# RELEASE_TOKEN: the workflow's own token (may write releases of psx-android only). Used for this one call;
+# RELEASE_TOKEN: the workflow's own token (may write releases of psx-android-builds only). Used for this one call;
 # git above keeps using this PC's sign-in, which can read the other private repositories.
 if ($Release -and $apks.Count) {
     $tag = "apk-" + (Get-Date -Format "yyyyMMdd-HHmm") + "-" + ($(if ($Game -eq "all") { "all" } else { ($games -join "+") -replace '_recomp', '' }))
@@ -174,7 +174,8 @@ if ($Release -and $apks.Count) {
     ) -join "`n"
     Step "Uploading to GitHub Release $tag"
     $env:GH_TOKEN = $env:RELEASE_TOKEN
-    & $gh release create $tag --repo dguillot-gh/psx-android --title $tag --notes $notes @($apks | ForEach-Object { $_.FullName })
+    $releaseRepo = if ($env:RELEASE_REPO) { $env:RELEASE_REPO } else { "dguillot-gh/psx-android-builds" }
+    & $gh release create $tag --repo $releaseRepo --title $tag --notes $notes @($apks | ForEach-Object { $_.FullName })
     $code = $LASTEXITCODE
     Remove-Item Env:GH_TOKEN
     if ($code -ne 0) { throw "could not create the release" }
