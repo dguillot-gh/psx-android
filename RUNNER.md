@@ -6,7 +6,7 @@ the scripts in this repository, signs it with the shared key, and puts it in a R
 **psx-android-builds**. The discs stay on the NAS and the VM; nothing from them goes to GitHub. The VM only needs
 to be on while a build runs (a job waits up to 24 hours for it).
 
-Set up 2026-10-08. Files: `.github/workflows/build-apk.yml` in psx-android-builds (the button), `tools/ci-build.ps1` (what a
+Set up 2026-10-08. Files: `.github/workflows/build-apk.yml` and `add-game.yml` in psx-android-builds (the buttons), `tools/ci-build.ps1` and `tools/add-game.ps1` (what a
 build does), `tools/setup-runner.ps1` (one-time setup). The signing key is the repository secret
 `PSX_KEYSTORE_B64` (the drive's `tools-cache\debug.keystore`, base64).
 
@@ -107,12 +107,38 @@ the phone like any APK, or let Obtainium follow psx-android-builds' Releases (ne
 
 A Pixel 8 that has the games from the USB drive takes these as updates: same signing key.
 
+## A new game
+1. On the NAS, make the folder `psx-discs\<name>_recomp` (lowercase, e.g. `tomba3_recomp`) and put the game's
+   `.cue` and `.bin` files in it, every disc (disc order = file name order: "(Disc 1)", "(Disc 2)", ...).
+2. github.com/dguillot-gh/psx-android-builds > **Actions** > **Add game** > **Run workflow**: type the name; tick
+   **Build the APK afterwards** to build it right away. (**Test only** reads the discs and sets up on the VM
+   without creating anything on GitHub; run it again without the tick to finish.)
+3. The game is then in Build APK's list. Its first boot may need work (seeds, overlays): bring the log to Claude.
+
+What it does (`tools/add-game.ps1`, run on the VM): reads the disc (`tools/new-recomp.ps1`: game.toml, seeds,
+boot program), puts the files read from the disc (like `SLUS_123.45`) next to the `.cue`/`.bin` on the NAS
+(that folder is what builds copy in), makes the game's **public** setup repository `dguillot-gh/<name>-android`
+(only its own files, checked for disc files and PC paths first: `tools/export-games.ps1 -Game`), adds it to
+psx-android as `games\<name>_recomp`, and adds the name to Build APK's list. Discs never go to GitHub.
+It stops with a clear message, before changing anything, when the NAS folder or its `.cue` is missing or the
+name is already used. A run that stopped halfway can simply be run again: it carries on.
+
+**Once on the VM** (VMs set up before Add game existed): the VM's GitHub sign-in needs the "workflow"
+permission to change Build APK's list. Add game says so when it is missing; then, in PowerShell on the VM:
+
+```powershell
+C:\psx\recomp-backups\tools-cache\gh\bin\gh.exe auth refresh -h github.com -s workflow
+```
+
+and type the code it shows at github.com/login/device. (`setup-runner.ps1` asks for it on new setups.)
+
+Test without the VM or GitHub (a fake 2-disc game, `tests\fixtures\add-game`):
+`pwsh -File tests\add-game-dryrun.ps1 -Kit <a recomp-backups folder with tools-cache\python and framework>`.
+
 ## Good to know
 - Each build first pulls the newest scripts, engine and game setups from GitHub, so save your changes
   to GitHub (easy menu option 9) before pressing the button. A changed recompiler is rebuilt automatically.
-- A **new game**: add it as usual (go.ps1 -Disc on a PC with a copy of the project), save to GitHub, copy its `recomps\<game>`
-  folder (without `disc`) to the VM and its `disc` folder to `psx-discs\<game>` on the NAS, and add its name to the `game:` list in
-  `.github/workflows/build-apk.yml` in psx-android-builds.
+- A **new game**: see "A new game" below.
 - The build runs at low priority, inside the VM's 3 cores, so the other things on the Proxmox box keep running.
 - Logs: the run's page on GitHub (Actions), and `psx-android-tools\progress.log` on the VM.
 - **Public repositories:** psx-android, psxrecomp-android and the game repositories hold no game code and can

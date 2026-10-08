@@ -281,3 +281,25 @@ serial; GitHub Actions releases + Obtainium. (19) upstream PR of the Android lay
   (workflow there; secret PSX_KEYSTORE_B64 there; ci-build releases to RELEASE_REPO). psx-android, the engine
   and the game repos can then go public (user's call). export-games.ps1 strips absolute disc paths from
   game.toml (6 game repos cleaned 2026-10-08). move-to-nas.ps1 / setup-vm.ps1 retire the USB drive (RUNNER.md).
+
+## 2026-10-08: "Add game" button (new games without the USB drive)
+- psx-android-builds `.github/workflows/add-game.yml` (workflow_dispatch: game text, build, test_only; runs on
+  the psx-build runner, concurrency group psx-build) runs `tools/add-game.ps1 -Game <x>_recomp [-DryRun]`.
+  Discs first go in the NAS's `psx-discs\<x>_recomp\` (.cue + .bin, every disc; order = natural name order).
+- add-game.ps1: checks (name format, name not in .gitmodules/games\/recomps\/recomps-later\/GitHub, NAS folder
+  and .cue present, gh signed in with the `workflow` scope) -> new-recomp.ps1 -> copies the files the probe
+  wrote into disc\ (boot EXE) back to the NAS folder, deletes recomps\<x>\disc (ci-build copies from the NAS)
+  -> `export-games.ps1 -Game <x>` (new param) + a .gitignore -> refuses disc/EXE/big files and drive-letter
+  paths in .toml/.json/.txt -> `gh repo create --public` dguillot-gh/<short>-android, push -> submodule add in
+  the VM's psx-android-tools, push (on failure reset --hard origin/main) -> clone psx-android-builds, insert
+  the name into build-apk.yml's `game:` options, push. Marker recomps\<x>\.add-game-pending = unfinished run
+  (also left by -DryRun): the next run carries on instead of refusing. The build is a separate Build APK run
+  started with `gh workflow run` (GITHUB_TOKEN, actions: write).
+- Pushing a workflow file needs the `workflow` OAuth scope: setup-runner.ps1 now logs in with
+  `--scopes workflow`; the existing VM needs `gh auth refresh -h github.com -s workflow` once (RUNNER.md).
+- export-games.ps1 also strips absolute paths from disc_probe.json / catalog_identity.json now (the 19 existing
+  game repos still have "cue_path": "D:\recomp-backups\..." until their next export + save).
+- Root .gitignore ignores disc images (*.bin, *.cue, *.iso, ...) except under tests/fixtures.
+- Test: `tests/add-game-dryrun.ps1 -Kit <recomp-backups>` (fake 2-disc game made by
+  tests/fixtures/add-game/make-fake-disc.py; 25 checks: refusals, probe, NAS layout, export, list edit,
+  carry-on, refusal of a finished name). Passed 2026-10-08 with the USB drive's python/framework.

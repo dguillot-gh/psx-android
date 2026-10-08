@@ -4,12 +4,23 @@ keys.txt
 local.properties
 disc/
 saves/
+# Disc images never go in git (Add game puts discs only on the NAS; each game repository ignores them too).
+*.bin
+*.BIN
+*.cue
+*.iso
+*.chd
+*.img
+*.ecm
+*.pbp
 check.log
 msg.txt
 
 # Test fixtures are fake and tiny; keep them even though they look like disc/saves.
 !tests/fixtures/**/disc/
 !tests/fixtures/**/saves/
+!tests/fixtures/**/*.bin
+!tests/fixtures/**/*.cue
 logs/
 tmp/
 work/

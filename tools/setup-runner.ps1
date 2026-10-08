@@ -69,7 +69,8 @@ Step "2. GitHub sign-in (account dguillot-gh)"
 & $gh auth status *> $null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "A code is shown next: open github.com/login/device and type it in."
-    & $gh auth login --hostname github.com --git-protocol https --web
+    # "workflow": Add game (add-game.ps1) puts new games in the Build APK list, a workflow file.
+    & $gh auth login --hostname github.com --git-protocol https --web --scopes workflow
     & $gh auth status *> $null
     if ($LASTEXITCODE -ne 0) { throw "not signed in to GitHub" }
 }

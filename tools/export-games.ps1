@@ -1,12 +1,14 @@
 # Copy each game's OWN files (what makes the recomp work, nothing from the disc) into games\<name>\,
 # for the git repository. Hand-written, 2026-10-07. Run again after changing a game's config or seeds.
-#   pwsh -File tools\export-games.ps1
+#   pwsh -File tools\export-games.ps1                   (every game)
+#   pwsh -File tools\export-games.ps1 -Game x_recomp    (one game; "Add game" on the build PC uses this)
 # Taken from recomps\<name>\ (and recomps-later\<name>\) : game.toml, seeds\, tools\, aot_exclude.txt, extra_discs.txt, README.md,
 #   REFERENCE.md, VERSION, CMakeLists.txt, build.ps1, catalog_identity.json, disc_probe.json.
 # Taken from android-recomp\<name>\build-android-overlays\ : play_captures.json (code ADDRESSES the game
 #   ran while being played; lets the pre-compile on another PC cover the same code).
 # NEVER taken: disc\, saves\, memcard-import\, generated\, psxrecomp\, build-release\, launcher_assets\
 #   (box art), assets\, probe.log, anything else.
+param([string]$Game = "")
 . (Join-Path $PSScriptRoot "paths.ps1")
 $root = Split-Path $PSScriptRoot -Parent
 $out = Join-Path $root "games"
@@ -37,6 +39,7 @@ $GameStatus = @{
 # recomps-later\ holds games set aside from the pipeline for now; their setup is kept too.
 $later = Join-Path $DriveRoot "recomps-later"
 foreach ($g in @(Get-ChildItem $recomps -Directory) + @(Get-ChildItem $later -Directory -ErrorAction SilentlyContinue)) {
+    if ($Game -and $g.Name -ne $Game) { continue }
     $dest = Join-Path $out $g.Name
     # A fresh copy each time (our own export). games\<name> is the game's own git repository (a submodule):
     # keep its .git link and .gitignore, replace everything else.
@@ -55,11 +58,13 @@ foreach ($g in @(Get-ChildItem $recomps -Directory) + @(Get-ChildItem $later -Di
     }
     # No paths from our PCs in the repositories (they may be public): an absolute disc path in game.toml
     # ("G:/ps1 ports/.../Game (USA).cue", only a note of where the disc was first read from) keeps its file name.
-    $tomlOut = Join-Path $dest "game.toml"
-    if (Test-Path $tomlOut) {
-        $t = Get-Content $tomlOut -Raw
-        $t2 = [regex]::Replace($t, '"[A-Za-z]:[/\\][^"]*[/\\]([^"/\\]+)"', '"$1"')
-        if ($t2 -ne $t) { Set-Content $tomlOut $t2 -Encoding utf8NoBOM -NoNewline }
+    # Same for the probe's JSON ("cue_path": "C:\\psx\\...\\Game (USA).cue", backslashes doubled there).
+    foreach ($f in "game.toml", "disc_probe.json", "catalog_identity.json") {
+        $p = Join-Path $dest $f
+        if (-not (Test-Path $p)) { continue }
+        $t = Get-Content $p -Raw
+        $t2 = [regex]::Replace($t, '"[A-Za-z]:(?:/|\\{1,2})[^"]*(?:/|\\)([^"/\\]+)"', '"$1"')
+        if ($t2 -ne $t) { Set-Content $p $t2 -Encoding utf8NoBOM -NoNewline }
     }
     $cap = Join-Path $work "$($g.Name)\build-android-overlays\play_captures.json"
     if (Test-Path $cap) { Copy-Item $cap (Join-Path $dest "play_captures.json") }

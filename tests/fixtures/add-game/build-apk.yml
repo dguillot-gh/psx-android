@@ -1,0 +1,33 @@
+# A copy of the inputs of psx-android-builds' build-apk.yml, for tests/add-game-dryrun.ps1.
+name: Build APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      game:
+        description: Game to build
+        type: choice
+        default: gex_recomp
+        options:
+          - all
+          - atvracers_recomp
+          - crash2_recomp
+          - crash3_recomp
+          - einhander_recomp
+          - ff7_recomp
+          - gex_recomp
+          - gex2_recomp
+          - gex3_recomp
+          - gt2sim_recomp
+          - legoisland2_recomp
+          - parasite_eve_recomp
+          - parasite_eve2_recomp
+          - persona_recomp
+          - persona2_recomp
+          - policenauts_recomp
+          - tomba_recomp
+          - tomba2_recomp
+      speed:
+        description: Speed pre-compile
+        type: boolean
+        default: false
