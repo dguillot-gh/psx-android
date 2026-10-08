@@ -6,7 +6,7 @@
 #    names in game.toml stay this PC's own). Discs never move: they are already on this PC.
 # 2. Rebuilds the recompiler when the engine update changed it.
 # 3. go.ps1 -NoPhone -NoTasks (no phone, no local model), at low priority so the PC stays usable.
-# 4. -Release: uploads the new APKs to a Release of the private psx-android-builds (RELEASE_TOKEN/RELEASE_REPO from its workflow).
+# 4. -Release: one Release per game in the private psx-android-builds, uploaded as soon as that game is built.
 # -Clean: removes each game's work folder afterwards (frees 1-5 GB per game; the next build starts from scratch).
 # Signing: the workflow puts the shared key in a temporary file and passes it as PSX_KEYSTORE (build.ps1).
 param(
@@ -113,6 +113,34 @@ $goExit = 0
 $missing = @()
 $stage = Join-Path $ToolsCache ("ci-apks-" + $started.ToString("yyyyMMdd-HHmmss"))
 New-Item -ItemType Directory -Force $stage | Out-Null
+
+# -Release: ONE Release per game, uploaded as soon as that game is built (an "all" run doesn't wait for
+# the last game). Title = the game's name + date, tag = <game>-<yyyyMMdd-HHmm>. RELEASE_TOKEN is the
+# workflow's own token (it may write releases of psx-android-builds only); git above keeps using this PC's
+# sign-in. The Releases stay in the PRIVATE psx-android-builds: the APKs contain game code.
+$releaseRepo = if ($env:RELEASE_REPO) { $env:RELEASE_REPO } else { "dguillot-gh/psx-android-builds" }
+$buildInfo = @(
+    "Built on the build PC from its own disc$(if ($Speed) { ', with the speed pre-compile' }). Private: contains game code, don't share.",
+    "",
+    "Engine: $((& git -C (Join-Path $DriveRoot 'framework\psxrecomp') log -1 --format='%h %s'))",
+    "Scripts: $((& git -C $tools log -1 --format='%h %s'))"
+) -join "`n"
+$published = @(); $publishFailed = @()
+function Publish-Apk([string]$g, [string]$apkPath) {
+    $title = $g -replace '_recomp$', ''
+    $toml = Join-Path $recomps "$g\game.toml"
+    if ((Test-Path $toml) -and ((Get-Content $toml -Raw) -match '(?m)^name\s*=\s*"([^"]+)"')) { $title = $Matches[1] -replace '(\s*\([^)]*\))+$', '' }
+    $when = Get-Date
+    $tag = (($g -replace '_recomp$', '') -replace '_', '-') + "-" + $when.ToString("yyyyMMdd-HHmm")
+    $name = "$title - " + $when.ToString("yyyy-MM-dd HH:mm") + $(if ($Speed) { " (speed)" } else { "" })
+    Step "Uploading $g to GitHub Release '$name'"
+    $env:GH_TOKEN = $env:RELEASE_TOKEN
+    & $gh release create $tag --repo $releaseRepo --title $name --notes $buildInfo $apkPath
+    $code = $LASTEXITCODE
+    Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
+    if ($code -eq 0) { $script:published += $name } else { $script:publishFailed += $g; Write-Host "UPLOAD FAILED for $g (gh exit $code)" }
+}
+
 foreach ($g in $games) {
     # Two places read the disc: recomps\<game>\disc (a first port copies it from there) and the game's
     # work folder android-recomp\<game>\disc (code generation and the speed pre-compile read that one).
@@ -140,7 +168,10 @@ foreach ($g in $games) {
         # Keep this run's APK aside (the work folder may be removed below).
         $apk = Get-ChildItem (Join-Path $DefaultWorkDir "$g\apk") -Filter *.apk -ErrorAction SilentlyContinue |
             Where-Object { $_.LastWriteTime -gt $started } | Sort-Object LastWriteTime | Select-Object -Last 1
-        if ($apk) { Copy-Item $apk.FullName $stage } else { $missing += $g }
+        if ($apk) {
+            Copy-Item $apk.FullName $stage
+            if ($Release) { Publish-Apk $g $apk.FullName }
+        } else { $missing += $g }
     } finally {
         # A first port made the work folder (and its disc copy) during this build: remove that one too.
         if ($fromNas) {
@@ -160,26 +191,11 @@ Step "Built $($apks.Count) of $($games.Count) APK(s)"
 $apks | ForEach-Object { Write-Host "  $($_.Name)  ($([math]::Round($_.Length / 1MB)) MB)" }
 if ($missing.Count) { Write-Host "  no APK for: $($missing -join ', ') (see the log above)" }
 
-# --- 4. Release -----------------------------------------------------------------------------------------------
-# RELEASE_TOKEN: the workflow's own token (may write releases of psx-android-builds only). Used for this one call;
-# git above keeps using this PC's sign-in, which can read the other private repositories.
-if ($Release -and $apks.Count) {
-    $tag = "apk-" + (Get-Date -Format "yyyyMMdd-HHmm") + "-" + ($(if ($Game -eq "all") { "all" } else { ($games -join "+") -replace '_recomp', '' }))
-    if ($tag.Length -gt 100) { $tag = $tag.Substring(0, 100) }
-    $notes = @(
-        "Built on the build PC from its own discs$(if ($Speed) { ', with the speed pre-compile' }). Private: contains game code, don't share.",
-        "",
-        "Engine: $((& git -C (Join-Path $DriveRoot 'framework\psxrecomp') log -1 --format='%h %s'))",
-        "Scripts: $((& git -C $tools log -1 --format='%h %s'))"
-    ) -join "`n"
-    Step "Uploading to GitHub Release $tag"
-    $env:GH_TOKEN = $env:RELEASE_TOKEN
-    $releaseRepo = if ($env:RELEASE_REPO) { $env:RELEASE_REPO } else { "dguillot-gh/psx-android-builds" }
-    & $gh release create $tag --repo $releaseRepo --title $tag --notes $notes @($apks | ForEach-Object { $_.FullName })
-    $code = $LASTEXITCODE
-    Remove-Item Env:GH_TOKEN
-    if ($code -ne 0) { throw "could not create the release" }
+# --- 4. Summary -------------------------------------------------------------------------------------------------
+if ($Release) {
+    if ($published.Count) { Write-Host "Released (github.com/$releaseRepo/releases):"; $published | ForEach-Object { Write-Host "  $_" } }
+    if ($publishFailed.Count) { Write-Host "Upload failed for: $($publishFailed -join ', ')" }
 }
 Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
-if ($goExit -ne 0 -or $missing.Count) { exit 1 }
+if ($goExit -ne 0 -or $missing.Count -or $publishFailed.Count) { exit 1 }
 exit 0

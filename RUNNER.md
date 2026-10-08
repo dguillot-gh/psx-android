@@ -99,7 +99,10 @@ github.com/dguillot-gh/psx-android-builds > **Actions** > **Build APK** > **Run 
 - **Free disk space**: on (default) deletes the game's build folder afterwards; the next build of that game
   starts from scratch (slower, always works). Off keeps it (faster rebuilds, 2-5 GB per game).
 
-The APKs appear under **Releases** (private; they contain game code: don't share them). Install one on
+The APKs appear under **Releases** of psx-android-builds (github.com/dguillot-gh/psx-android-builds/releases):
+**one Release per game**, named after the game and the date (e.g. "Tomba! 2 - The Evil Swine Return -
+2026-10-08 22:10"), uploaded as soon as that game is built, so with `all` they arrive one by one.
+Private: they contain game code, don't share them. Install one on
 the phone like any APK, or let Obtainium follow psx-android-builds' Releases (needs a GitHub token: the repository is private).
 
 A Pixel 8 that has the games from the USB drive takes these as updates: same signing key.
