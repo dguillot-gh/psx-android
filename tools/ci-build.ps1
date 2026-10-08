@@ -36,7 +36,7 @@ $minGit = Join-Path $ToolsCache "mingit\cmd"
 if (-not (Get-Command git -ErrorAction SilentlyContinue) -and (Test-Path $minGit)) { $env:PATH = "$minGit;$env:PATH" }
 # git reaches the private repositories through the GitHub CLI's sign-in on this PC (setup-runner.ps1).
 $cred = "credential.helper=!'" + ($gh -replace '\\', '/') + "' auth git-credential"
-function Git([string]$dir) {
+function Git-Must([string]$dir) {
     & git -C $dir -c credential.helper= -c $cred @args
     if ($LASTEXITCODE -ne 0) { throw "git $($args -join ' ') failed in $dir" }
 }
@@ -44,15 +44,15 @@ function Git([string]$dir) {
 if (-not $NoUpdate) {
     # --- 1a. Scripts --------------------------------------------------------------------------------------
     Step "Updating the scripts (psx-android)"
-    Git $tools fetch -q origin main
-    Git $tools merge -q --ff-only origin/main
-    Git $tools submodule update -q --init --force -- games
+    Git-Must $tools fetch -q origin main
+    Git-Must $tools merge -q --ff-only origin/main
+    Git-Must $tools submodule update -q --init --force -- games
     # --- 1b. Engine -----------------------------------------------------------------------------------------
     Step "Updating the engine (psxrecomp-android, branch android)"
     $fw = Join-Path $DriveRoot "framework\psxrecomp"
     $before = (& git -C $fw rev-parse HEAD).Trim()
-    Git $fw fetch -q origin android
-    Git $fw merge -q --ff-only origin/android
+    Git-Must $fw fetch -q origin android
+    Git-Must $fw merge -q --ff-only origin/android
     $after = (& git -C $fw rev-parse HEAD).Trim()
     if ($before -ne $after) {
         Write-Host "Engine: $($before.Substring(0,8)) -> $($after.Substring(0,8))"
