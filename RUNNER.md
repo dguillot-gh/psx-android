@@ -12,68 +12,77 @@ build does), `tools/setup-runner.ps1` (one-time setup). The signing key is the r
 
 ## What goes where (the USB drive is retired after this)
 
+The NAS gets only what matters (about 25 GB), not the whole 175 GB drive. Below, the NAS folder is
+`\\NAS\share\Android Recomp`: use your own path, **in quotes** (it has a space).
+
 ```
-NAS  (\\NAS\psx)
-├── recomp-backups-archive\     the whole USB drive, copied once, as-is (safety net, never touched)
-│   ├── 2026-10-03\             (keys.txt inside, left alone)
-│   └── apks\, android-recomp\, saves backups, reference\, llm work\, ... everything
-├── psx-discs\                  what the VM builds from (about 10 GB)
+NAS  ("\\NAS\share\Android Recomp")
+├── keys\debug.keystore         the signing key (keep one more copy off the NAS)
+├── saves\                      memory cards and app-data backups (saves-backup, each game's saves and
+│                               memcard-import, 2026-10-03\phone-backup, 2026-10-03's loose files incl. keys.txt)
+├── psx-discs\                  what the VM builds from (about 13 GB)
 │   ├── gex_recomp\             Gex (USA) (Rev 1).cue + .bin + the files read from the disc
 │   ├── ff7_recomp\             3 discs
-│   └── ... one folder per game
-└── keys\debug.keystore         the signing key (keep one more copy off the NAS)
+│   └── ... one folder per game (recomps-later games too)
+└── build-kit\                  what the VM copies (about 7 GB)
+    ├── tools-cache\            Java, Android SDK/NDK, Python, PowerShell, GitHub CLI
+    ├── framework\psxrecomp\    the engine
+    ├── psx-android-tools\      the scripts
+    └── recomps\<game>\         each game's setup, without disc and saves
 
 VM  (C:\psx\recomp-backups: about 7 GB, plus one game's build at a time)
-├── tools-cache\                Java, Android SDK/NDK, Python, PowerShell, GitHub CLI (4.8 GB)
-├── framework\psxrecomp\        the engine (updated from GitHub at each build)
-├── psx-android-tools\          the scripts (updated from GitHub at each build)
-├── recomps\<game>\             each game's setup, WITHOUT its disc folder (1.4 GB in all)
+├── tools-cache\, framework\psxrecomp\, psx-android-tools\, recomps\    (copied from build-kit)
 ├── actions-runner\             GitHub's runner (made by setup-runner.ps1)
 └── android-recomp\<game>\      build folder, 1-7 GB, deleted after each build ("Free disk space")
 
 GitHub  (already there, nothing to copy)
-├── psx-android                 scripts and guides (can be public)
-├── psxrecomp-android           the engine (can be public)
-├── psx-android-builds          PRIVATE: the "Build APK" button, the runner, Releases (the APKs)
-└── <game>-android              each game's setup
+├── psx-android                 scripts and guides (public)
+├── psxrecomp-android           the engine (public)
+├── <game>-android              each game's setup (public)
+└── psx-android-builds          PRIVATE: the "Build APK" button, the runner, Releases (the APKs)
 ```
+
+**Not copied** (they stay on the USB drive; rebuildable or duplicates): `android-recomp*` (build folders, 55 GB),
+`apks\` (old builds; new ones are GitHub Releases), `to-do\` (the same disc rips as psx-discs), 2026-10-03's
+old project snapshots and scratch, `reference\` (on GitHub), `git repos\`, `llm work\`.
 
 GitHub's secret has the signing key too, but a secret can't be downloaded back: if every other copy of
 `debug.keystore` is lost, the phone refuses updates to the installed games.
 
 ## One-time setup
-Two scripts do the copying; you run one command on each machine. Only wipe or reuse the USB drive after
-a test build on the VM worked.
+Two scripts do the copying; you run one command on each machine. Keep the USB drive until a test build
+on the VM worked.
 
-### 1. On the PC with the USB drive: copy it to the NAS
-Make a share on the NAS (here `\\NAS\psx`; use yours) and check you can open it in File Explorer. Then in
-PowerShell (replace `E:` with the drive's letter):
+### 1. On the PC with the USB drive: copy to the NAS
+Check you can open the NAS folder in File Explorer. Then in PowerShell (replace `E:` with the drive's letter):
 
 ```powershell
-E:\recomp-backups\tools-cache\pwsh\pwsh.exe -File E:\recomp-backups\psx-android-tools\tools\move-to-nas.ps1 -Nas \\NAS\psx
+E:\recomp-backups\tools-cache\pwsh\pwsh.exe -File E:\recomp-backups\psx-android-tools\tools\move-to-nas.ps1 -Nas "\\NAS\share\Android Recomp"
 ```
 
-It makes `keys\debug.keystore`, `psx-discs\<game>` (about 10 GB) and `recomp-backups-archive` (the whole
-drive, about 175 GB: around 2 hours). It only adds files, never deletes any; if it stops, run it again and
-it continues. Afterwards keep one more copy of the key off the NAS (e.g. a password manager).
+About 25 GB, so well under an hour. It only adds files, never deletes any; if it stops, run it again and it
+continues. It ends with "Done: key, saves, N games' discs and the build kit are on the NAS." A folder
+`recomp-backups-archive` from the earlier, unfinished full copy is not used any more: delete it yourself
+when you like.
 
 ### 2. On the VM: save the NAS password
-In PowerShell, as your normal Windows user (`NAS` = the NAS's name or IP exactly as in `\\NAS\psx`):
+In PowerShell, as your normal Windows user (`NAS` = the NAS's name or IP exactly as in the path):
 
 ```powershell
 cmdkey /add:NAS /user:<nas user> /pass
 ```
 
-It asks for the password. Check: `dir \\NAS\psx\psx-discs` lists the game folders.
+It asks for the password. Check: `dir "\\NAS\share\Android Recomp\psx-discs"` lists the game folders.
 
 ### 3. On the VM: copy and set up
 Open PowerShell with **Run as administrator** (needed once, to add the background service), then:
 
 ```powershell
-\\NAS\psx\recomp-backups-archive\tools-cache\pwsh\pwsh.exe -File \\NAS\psx\recomp-backups-archive\psx-android-tools\tools\setup-vm.ps1 -Nas \\NAS\psx
+& "\\NAS\share\Android Recomp\build-kit\tools-cache\pwsh\pwsh.exe" -ExecutionPolicy Bypass -File "\\NAS\share\Android Recomp\build-kit\psx-android-tools\tools\setup-vm.ps1" -Nas "\\NAS\share\Android Recomp"
 ```
 
-It copies what building needs to `C:\psx\recomp-backups` (about 7 GB; `-To D:\somewhere` for another disk),
+(`-ExecutionPolicy Bypass` only lets this one run start a script from the network share.) It copies the
+build kit to `C:\psx\recomp-backups` (about 7 GB; add `-To D:\psx\recomp-backups` for another disk),
 then sets up the runner. It asks you twice: a **GitHub code** (type it at github.com/login/device, account
 dguillot-gh) and your **Windows password** (the service runs as you, so it uses your GitHub sign-in and the
 saved NAS password). At the end, github.com/dguillot-gh/psx-android-builds > Settings > Actions > Runners lists

@@ -42,7 +42,11 @@ foreach ($p in $gh, (Join-Path $ToolsCache "pwsh\pwsh.exe"), (Join-Path $DriveRo
 }
 $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $NoService -and -not $admin) { throw "open PowerShell with 'Run as administrator' (needed to add the service), or use -NoService" }
-if ($Discs -and -not (Test-Path -LiteralPath $Discs)) { throw "can't reach $Discs : check the path, and save the NAS password first (RUNNER.md, step 3)" }
+# The runner service never sees mapped drive letters: the discs must be a \\server\share path.
+if ($Discs -match '^[A-Za-z]:' -and (Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$($Discs.Substring(0,2))'" -ErrorAction SilentlyContinue).DriveType -ne 3) {
+    throw "$Discs is on a mapped or removable drive the build service can't see. Use the \\server\share path (in a normal PowerShell: (Get-PSDrive $($Discs[0])).DisplayRoot)."
+}
+if ($Discs -and -not (Test-Path -LiteralPath $Discs)) { throw "can't reach $Discs : check the path, and save the NAS password first (RUNNER.md, step 2)" }
 
 # --- 1. git ----------------------------------------------------------------------------------------------
 Step "1. git"
