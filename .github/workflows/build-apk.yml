@@ -62,6 +62,21 @@ jobs:
           if (-not $env:KEYSTORE_B64) { throw "secret PSX_KEYSTORE_B64 is missing (RUNNER.md)" }
           [IO.File]::WriteAllBytes("$env:RUNNER_TEMP\psx.keystore", [Convert]::FromBase64String($env:KEYSTORE_B64))
 
+      - name: Update the scripts
+        # Here, not in ci-build.ps1: a broken ci-build.ps1 on the build PC is then fixed by the next push.
+        shell: powershell
+        run: |
+          if (-not $env:PSX_ROOT) { throw "PSX_ROOT is not set on the build PC (actions-runner\.env; RUNNER.md)" }
+          $minGit = "$env:PSX_ROOT\tools-cache\mingit\cmd"
+          if (-not (Get-Command git -ErrorAction SilentlyContinue)) { $env:PATH = "$minGit;$env:PATH" }
+          $gh = ("$env:PSX_ROOT\tools-cache\gh\bin\gh.exe").Replace('\', '/')
+          $t = "$env:PSX_ROOT\psx-android-tools"
+          git -C $t -c credential.helper= -c "credential.helper=!'$gh' auth git-credential" fetch -q origin main
+          if ($LASTEXITCODE -ne 0) { throw "git fetch failed" }
+          git -C $t merge -q --ff-only origin/main
+          if ($LASTEXITCODE -ne 0) { throw "git merge failed (local changes on the build PC?)" }
+          git -C $t log -1 --format="Scripts: %h %s"
+
       - name: Build
         shell: powershell
         env:
@@ -72,7 +87,6 @@ jobs:
           SPEED_MINUTES: ${{ inputs.speed_minutes }}
           CLEAN: ${{ inputs.clean }}
         run: |
-          if (-not $env:PSX_ROOT) { throw "PSX_ROOT is not set on the build PC (actions-runner\.env; RUNNER.md)" }
           $a = @("-NoProfile", "-File", "$env:PSX_ROOT\psx-android-tools\tools\ci-build.ps1", "-Game", $env:GAME, "-Release",
                  "-SpeedMinutes", $env:SPEED_MINUTES)
           if ($env:SPEED -eq "true") { $a += "-Speed" }

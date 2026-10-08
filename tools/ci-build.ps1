@@ -43,9 +43,8 @@ function Git-Must([string]$dir) {
 
 if (-not $NoUpdate) {
     # --- 1a. Scripts --------------------------------------------------------------------------------------
-    Step "Updating the scripts (psx-android)"
-    Git-Must $tools fetch -q origin main
-    Git-Must $tools merge -q --ff-only origin/main
+    Step "Updating the games list (psx-android submodules)"
+    # (The scripts themselves were updated by the workflow's step before this one.)
     Git-Must $tools submodule update -q --init --force -- games
     # --- 1b. Engine -----------------------------------------------------------------------------------------
     Step "Updating the engine (psxrecomp-android, branch android)"
