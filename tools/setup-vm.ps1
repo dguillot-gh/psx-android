@@ -1,12 +1,13 @@
 # Retire the USB drive, part 2 (RUNNER.md): make this PC (the VM) the build PC, from the NAS copy that
 # move-to-nas.ps1 made. Run in PowerShell opened with "Run as administrator", straight from the NAS
 # (quotes needed when the path has spaces):
-#   & "\\NAS\share\Android Recomp\build-kit\tools-cache\pwsh\pwsh.exe" -ExecutionPolicy Bypass -File "\\NAS\share\Android Recomp\build-kit\psx-android-tools\tools\setup-vm.ps1" -Nas "\\NAS\share\Android Recomp"
+#   & "\\192.168.0.194\windowsmedia\Android Recomp\build-kit\tools-cache\pwsh\pwsh.exe" -ExecutionPolicy Bypass -File "\\192.168.0.194\windowsmedia\Android Recomp\build-kit\psx-android-tools\tools\setup-vm.ps1"
+# The NAS folder defaults to ours (Z: on our PCs); another with -Nas "<\\server\share\folder>".
 # Hand-written, 2026-10-08. Copies <Nas>\build-kit (about 7 GB: tools, engine, scripts, game setups; no
 # discs) to -To (default C:\psx\recomp-backups), then runs that copy's setup-runner.ps1 with the discs in
 # <Nas>\psx-discs. Safe to run again (copies only what's missing/changed).
 param(
-    [Parameter(Mandatory = $true)][string]$Nas,
+    [string]$Nas = "\\192.168.0.194\windowsmedia\Android Recomp",
     [string]$To = "C:\psx\recomp-backups",
     [switch]$NoService,
     [switch]$CopyOnly        # copy, but don't set up the runner

@@ -1,6 +1,8 @@
 # Retire the USB drive, part 1 (RUNNER.md): copy what matters to the NAS (about 25 GB, not the whole drive).
 # Run on the PC with the USB drive plugged in:
-#   <drive>\recomp-backups\tools-cache\pwsh\pwsh.exe -File <drive>\recomp-backups\psx-android-tools\tools\move-to-nas.ps1 -Nas \\NAS\psx
+#   <drive>\recomp-backups\tools-cache\pwsh\pwsh.exe -File <drive>\recomp-backups\psx-android-tools\tools\move-to-nas.ps1
+# The NAS folder defaults to ours ("\\192.168.0.194\windowsmedia\Android Recomp", Z: on our PCs); another
+# with -Nas "<\\server\share\folder>".
 # Hand-written, 2026-10-08 (slimmed the same day: the full 175 GB archive took too long). Makes on the NAS:
 #   keys\debug.keystore   the signing key (the phone only takes updates signed with it)
 #   psx-discs\<game>\     each game's disc folder, recomps\ and recomps-later\ (about 13 GB)
@@ -14,7 +16,7 @@
 # reference\ (on GitHub), git repos\, llm work\. They stay on the USB drive.
 # Only ever ADDS or UPDATES files on the NAS (no /MIR: nothing there is deleted). Safe to run again: an
 # interrupted copy continues where it stopped. The USB drive is only read.
-param([Parameter(Mandatory = $true)][string]$Nas)
+param([string]$Nas = "\\192.168.0.194\windowsmedia\Android Recomp")
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "paths.ps1")
 if (-not (Test-Path -LiteralPath $Nas)) { throw "can't reach $Nas (check the path; Windows may ask for the NAS password in File Explorer first)" }

@@ -12,11 +12,14 @@ build does), `tools/setup-runner.ps1` (one-time setup). The signing key is the r
 
 ## What goes where (the USB drive is retired after this)
 
-The NAS gets only what matters (about 25 GB), not the whole 175 GB drive. Below, the NAS folder is
-`\\NAS\share\Android Recomp`: use your own path, **in quotes** (it has a space).
+The NAS gets only what matters (about 25 GB), not the whole 175 GB drive. The NAS folder is
+`\\192.168.0.194\windowsmedia\Android Recomp` (`Z:\Android Recomp` on our PCs). It is built into
+the scripts; for another folder add `-Nas "<\\server\share\folder>"` (in quotes).
+The VM and the build service need this `\\192.168.0.194\...` form: a mapped letter like `Z:` is invisible
+to "Run as administrator" windows and to the service.
 
 ```
-NAS  ("\\NAS\share\Android Recomp")
+NAS  ("\\192.168.0.194\windowsmedia\Android Recomp")
 ├── keys\debug.keystore         the signing key (keep one more copy off the NAS)
 ├── saves\                      memory cards and app-data backups (saves-backup, each game's saves and
 │                               memcard-import, 2026-10-03\phone-backup, 2026-10-03's loose files incl. keys.txt)
@@ -57,7 +60,7 @@ on the VM worked.
 Check you can open the NAS folder in File Explorer. Then in PowerShell (replace `E:` with the drive's letter):
 
 ```powershell
-E:\recomp-backups\tools-cache\pwsh\pwsh.exe -File E:\recomp-backups\psx-android-tools\tools\move-to-nas.ps1 -Nas "\\NAS\share\Android Recomp"
+E:\recomp-backups\tools-cache\pwsh\pwsh.exe -File E:\recomp-backups\psx-android-tools\tools\move-to-nas.ps1
 ```
 
 About 25 GB, so well under an hour. It only adds files, never deletes any; if it stops, run it again and it
@@ -66,19 +69,19 @@ continues. It ends with "Done: key, saves, N games' discs and the build kit are 
 when you like.
 
 ### 2. On the VM: save the NAS password
-In PowerShell, as your normal Windows user (`NAS` = the NAS's name or IP exactly as in the path):
+In PowerShell, as your normal Windows user:
 
 ```powershell
-cmdkey /add:NAS /user:<nas user> /pass
+cmdkey /add:192.168.0.194 /user:<your nas user> /pass
 ```
 
-It asks for the password. Check: `dir "\\NAS\share\Android Recomp\psx-discs"` lists the game folders.
+It asks for the password. Check: `dir "\\192.168.0.194\windowsmedia\Android Recomp\psx-discs"` lists the game folders.
 
 ### 3. On the VM: copy and set up
 Open PowerShell with **Run as administrator** (needed once, to add the background service), then:
 
 ```powershell
-& "\\NAS\share\Android Recomp\build-kit\tools-cache\pwsh\pwsh.exe" -ExecutionPolicy Bypass -File "\\NAS\share\Android Recomp\build-kit\psx-android-tools\tools\setup-vm.ps1" -Nas "\\NAS\share\Android Recomp"
+& "\\192.168.0.194\windowsmedia\Android Recomp\build-kit\tools-cache\pwsh\pwsh.exe" -ExecutionPolicy Bypass -File "\\192.168.0.194\windowsmedia\Android Recomp\build-kit\psx-android-tools\tools\setup-vm.ps1"
 ```
 
 (`-ExecutionPolicy Bypass` only lets this one run start a script from the network share.) It copies the
