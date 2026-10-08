@@ -53,15 +53,14 @@ if (-not $NoUpdate) {
     Git-Must $fw fetch -q origin android
     Git-Must $fw merge -q --ff-only origin/android
     $after = (& git -C $fw rev-parse HEAD).Trim()
-    if ($before -ne $after) {
-        Write-Host "Engine: $($before.Substring(0,8)) -> $($after.Substring(0,8))"
-        $changed = @(& git -C $fw diff --name-only $before $after -- recompiler)
-        if ($changed.Count) {
-            Step "The recompiler changed: rebuilding it (5-10 min)"
-            & pwsh -NoProfile -File (Join-Path $PSScriptRoot "build-recompiler.ps1") -Force
-            if ($LASTEXITCODE -ne 0) { throw "could not rebuild the recompiler" }
-        }
-    } else { Write-Host "Engine: already up to date ($($after.Substring(0,8)))" }
+    if ($before -ne $after) { Write-Host "Engine: $($before.Substring(0,8)) -> $($after.Substring(0,8))" }
+    else { Write-Host "Engine: already up to date ($($after.Substring(0,8)))" }
+    # Engine edits on this PC that are not on GitHub ARE used by the builds: say so in the log.
+    $local = @(& git -C $fw status --short 2>$null | Where-Object { $_ -notmatch '^\?\?' })
+    if ($local.Count) {
+        Write-Host "NOTE: the engine on this PC has $($local.Count) change(s) that are not on GitHub (used by this build):"
+        $local | Select-Object -First 20 | ForEach-Object { Write-Host "  $_" }
+    }
     # --- 1c. Each game's setup: games\<name> (its repository) -> recomps\<name> --------------------------
     # The reverse of export-games.ps1. game.toml keeps this PC's disc file names (disc / discs lines).
     Step "Updating each game's setup from its repository"
@@ -99,6 +98,30 @@ if (-not $NoUpdate) {
         if ((Test-Path $caps) -and (Test-Path (Split-Path $work)) -and
             (-not (Test-Path $work) -or (Get-Item $caps).Length -gt (Get-Item $work).Length)) { Copy-Item $caps $work -Force }
     }
+}
+
+# --- 2. Recompiler matches the engine sources? ----------------------------------------------------------------
+# Every game's build checks that psxrecomp-game.exe was built from exactly these engine sources (the codegen
+# hash, tools\codegen_hash.py) and stops with "STALE RECOMPILER" otherwise: rebuild it once here instead
+# (5-10 min). Same hash as codegen_hash.py (SHA-256 of runtime\codegen_hash_sources.cmake's files, CRLF read
+# as LF, first 8 hex digits), computed here without writing any file.
+$fwDir = Join-Path $DriveRoot "framework\psxrecomp"
+$recExe = Join-Path $fwDir "recompiler\build-mingw\psxrecomp-game.exe"
+$hashList = Join-Path $fwDir "runtime\codegen_hash_sources.cmake"
+if ((Test-Path $recExe) -and (Test-Path $hashList)) {
+    $lines = Get-Content $hashList | ForEach-Object { ($_ -split '#', 2)[0] }
+    $sha = [Security.Cryptography.SHA256]::Create(); $buf = New-Object IO.MemoryStream; $l1 = [Text.Encoding]::GetEncoding(28591)
+    foreach ($m in [regex]::Matches(($lines -join "`n"), '\$\{PSXRECOMP_CODEGEN_HASH_ROOT\}/([^\s)"]+)')) {
+        $f = Join-Path $fwDir ($m.Groups[1].Value -replace '/', '\')
+        if (Test-Path $f) { $b = $l1.GetBytes($l1.GetString([IO.File]::ReadAllBytes($f)).Replace("`r`n", "`n")); $buf.Write($b, 0, $b.Length) }
+    }
+    $want = (($sha.ComputeHash($buf.ToArray()) | ForEach-Object { $_.ToString("x2") }) -join '').Substring(0, 8)
+    $has = if ((& $recExe --codegen-hash 2>$null | Out-String) -match '([0-9a-fA-F]{8})') { $Matches[1].ToLower() } else { "(none)" }
+    if ($want -ne $has) {
+        Step "The recompiler doesn't match the engine sources (sources $want, recompiler $has): rebuilding it (5-10 min)"
+        & pwsh -NoProfile -File (Join-Path $PSScriptRoot "build-recompiler.ps1") -Force
+        if ($LASTEXITCODE -ne 0) { throw "could not rebuild the recompiler" }
+    } else { Write-Host "Recompiler: matches the engine sources ($want)" }
 }
 
 # --- 3. Build -----------------------------------------------------------------------------------------------
