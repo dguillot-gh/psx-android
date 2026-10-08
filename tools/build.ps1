@@ -48,11 +48,13 @@ if ($Play) { $gradleArgs += "-PpsxPlayBuild" }
 # installed app. setup.ps1 puts the home PC's debug key (the one the installed games were first
 # built with) on the drive; sign with it here, whichever PC builds. Without it Gradle uses this
 # PC's own debug key, and the phone refuses the update (INSTALL_FAILED_UPDATE_INCOMPATIBLE).
-$sharedKey = Join-Path $ToolsCache "debug.keystore"
+# The GitHub build PC gets the same key from the workflow (a repository secret, written to a temporary
+# file and passed as PSX_KEYSTORE); it wins over the drive's copy.
+$sharedKey = if ($env:PSX_KEYSTORE) { $env:PSX_KEYSTORE } else { Join-Path $ToolsCache "debug.keystore" }
 if (Test-Path $sharedKey) {
     $gradleArgs += @("-Pandroid.injected.signing.store.file=$sharedKey", "-Pandroid.injected.signing.store.password=android",
                      "-Pandroid.injected.signing.key.alias=androiddebugkey", "-Pandroid.injected.signing.key.password=android")
-    Write-Host "Signing with the shared key on the drive ($sharedKey)"
+    Write-Host "Signing with the shared key ($sharedKey)"
 } else {
     Write-Host "NOTE: no shared signing key on the drive yet (run tools\setup.ps1 on the home PC); using this PC's own key"
 }

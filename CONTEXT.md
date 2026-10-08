@@ -264,3 +264,16 @@ Sharing: (18) shareable APK (memory note "project-shareable-apk-on-device-build"
 APK loading the game code module from storage; then on-phone TCC build; one library app keyed by disc
 serial; GitHub Actions releases + Obtainium. (19) upstream PR of the Android layer to mstan/psxrecomp.
 (20) make repos public after stripping local paths from game.toml; invite co-workers (read-only).
+
+## 2026-10-08: GitHub "Build APK" button on a home build PC (self-hosted runner)
+- RUNNER.md = the guide. `.github/workflows/build-apk.yml` (workflow_dispatch: game, speed, speed_minutes, clean)
+  runs on runner label `psx-build` (the Windows VM on the user's Proxmox box: 3 cores, 13 GB, little disk;
+  discs on the NAS, env PSX_DISCS in actions-runner\.env, copied in per game and removed after).
+- `tools/ci-build.ps1`: pulls psx-android (ff-only) + games submodules, engine (origin/android, rebuilds the
+  recompiler when recompiler/ changed), copies games\<name> setup into recomps\<name> keeping this PC's
+  [game] disc lines; go.ps1 -NoPhone -NoTasks per game at BelowNormal priority; APKs -> private Release of
+  psx-android (tag apk-<date>-<game>) with the workflow token (RELEASE_TOKEN); -Clean removes work folders.
+- Signing: secret PSX_KEYSTORE_B64 (= tools-cache\debug.keystore); build.ps1 prefers env PSX_KEYSTORE.
+- go.ps1 got -NoTasks (skip the local-model task cards). `tools/setup-runner.ps1`: MinGit if no git, gh login,
+  runner download (SHA-256 checked), registration, Windows service as the user's account, .env.
+- Public repos later: move the button + Releases to a separate PRIVATE repo first (runner + game-code APKs).

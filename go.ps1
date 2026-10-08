@@ -32,6 +32,7 @@ param(
     [switch]$NoPhone,
     [switch]$NoInstall,
     [switch]$NoDiscPush,
+    [switch]$NoTasks,       # skip the task cards (no local model on the build PC; tools\ci-build.ps1)
     [switch]$Speed,
     [int]$TestSeconds = 90,
     [int]$SpeedMinutes = 0,      # -Speed pre-compile time cap (0 = speed.ps1 default, 45); unfinished pieces resume next run
@@ -74,7 +75,7 @@ if (-not $Status) {
 }
 
 # --- Stage 1: task cards -----------------------------------------------------
-$cards = Get-ChildItem tasks -Filter "*.md" | Sort-Object Name
+$cards = if ($NoTasks) { @() } else { Get-ChildItem tasks -Filter "*.md" | Sort-Object Name }
 foreach ($card in $cards) {
     $text = Get-Content $card.FullName -Raw
     if ($text -notmatch 'DONE WHEN (tools\\[\w.-]+\.ps1) exits 0') { Write-Host "SKIP $($card.Name): no DONE WHEN line"; continue }
