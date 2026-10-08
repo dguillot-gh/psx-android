@@ -7,9 +7,10 @@ $installed = @{}
 if ($phone) {
     foreach ($l in & $Adb shell pm list packages com.psxrecomp 2>$null) { if ($l -match 'package:(\S+)') { $installed[$Matches[1]] = $true } }
 }
+$allApks = @(Get-ChildItem (Join-Path $DriveRoot "apks") -Recurse -Filter "*-play-*.apk" -ErrorAction SilentlyContinue)   # one scan
 $rows = foreach ($g in Get-Games -IncludeLater) {
     $pkg = Get-Package $g
-    $apk = Get-ChildItem (Join-Path $DriveRoot "apks") -Recurse -Filter "$g-play-*.apk" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
+    $apk = $allApks | Where-Object { $_.Name -like "$g-play-*" } | Sort-Object LastWriteTime | Select-Object -Last 1
     $test = Get-ChildItem (Join-Path $WorkDir "$g\phone-test") -Recurse -Filter summary.txt -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
     $sum = if ($test) { ((Get-Content $test.FullName -Raw) -replace '\s+', ' ').Trim() } else { "" }
     if ($sum -match 'GAME fps min [\d.]+, average ([\d.]+)') { $sum = "game fps ~$($Matches[1])" } elseif ($sum.Length -gt 40) { $sum = $sum.Substring(0, 40) + "..." }
