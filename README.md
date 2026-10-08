@@ -23,7 +23,7 @@ disc change, restart and display options, a movable FPS counter, software or GPU
 - **Your own copy of the game**, ripped to `.cue` + `.bin` (each game's README says which version).
 - An **Android phone** (64-bit, Android 5 or newer; tested on a Pixel 8) and a USB cable.
 - **PowerShell 7**: in a normal PowerShell window run `winget install Microsoft.PowerShell`.
-- **GitHub Desktop** (or git), signed in with an account that has been given access to these repositories.
+- **GitHub Desktop** (or git). The repositories are public: no account or access needed to clone them.
 
 ### 1. Get the repositories (once)
 1. Make a folder with a short path, for example `C:\psx`.
