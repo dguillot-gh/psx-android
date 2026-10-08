@@ -51,16 +51,19 @@ if (-not $NoUpdate) {
     $fw = Join-Path $DriveRoot "framework\psxrecomp"
     $before = (& git -C $fw rev-parse HEAD).Trim()
     Git-Must $fw fetch -q origin android
+    # The build PC's engine follows GitHub. Edits made on this PC (e.g. copied over with an unfinished change)
+    # would block the update: set them aside first (git stash: kept and recoverable, never deleted; see them
+    # with  git -C <engine> stash list ).
+    $local = @(& git -C $fw status --short 2>$null | Where-Object { $_ -notmatch '^\?\?' })
+    if ($local.Count) {
+        Write-Host "NOTE: the engine on this PC had $($local.Count) change(s) not on GitHub; set aside (git stash), using GitHub's version:"
+        $local | Select-Object -First 20 | ForEach-Object { Write-Host "  $_" }
+        Git-Must $fw -c user.name=psx -c user.email=psx@local stash push -q -m ("build PC edits set aside " + (Get-Date -Format "yyyy-MM-dd HH:mm"))
+    }
     Git-Must $fw merge -q --ff-only origin/android
     $after = (& git -C $fw rev-parse HEAD).Trim()
     if ($before -ne $after) { Write-Host "Engine: $($before.Substring(0,8)) -> $($after.Substring(0,8))" }
     else { Write-Host "Engine: already up to date ($($after.Substring(0,8)))" }
-    # Engine edits on this PC that are not on GitHub ARE used by the builds: say so in the log.
-    $local = @(& git -C $fw status --short 2>$null | Where-Object { $_ -notmatch '^\?\?' })
-    if ($local.Count) {
-        Write-Host "NOTE: the engine on this PC has $($local.Count) change(s) that are not on GitHub (used by this build):"
-        $local | Select-Object -First 20 | ForEach-Object { Write-Host "  $_" }
-    }
     # --- 1c. Each game's setup: games\<name> (its repository) -> recomps\<name> --------------------------
     # The reverse of export-games.ps1. game.toml keeps this PC's disc file names (disc / discs lines).
     Step "Updating each game's setup from its repository"
