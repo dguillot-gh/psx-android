@@ -23,7 +23,6 @@ public sealed class JobRunner
     private readonly Paths _paths;
     private readonly Queue<Step> _queue = new();
     private Process? _proc;
-    private StreamWriter? _log;
     private bool _stopping;
 
     public event Action<string, LineKind>? Line;
@@ -54,11 +53,11 @@ public sealed class JobRunner
         Results.Clear();
         GameOk.Clear();
         _stopping = false;
-        Directory.CreateDirectory(_paths.Logs);
-        var logPath = Path.Combine(_paths.Logs, $"manager-{DateTime.Now:yyyyMMdd}.log");
-        _log = new StreamWriter(new FileStream(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite), Encoding.UTF8) { AutoFlush = true };
         Emit($"===== {DateTime.Now:yyyy-MM-dd HH:mm:ss}  {jobName} ({StepCount} step(s)) =====", LineKind.Header);
-        Emit($"(this log is also saved in {logPath})", LineKind.Info);
+        Emit($"(this log is also saved in {AppLog.CurrentFile})", LineKind.Info);
+        foreach (var c in AppLog.Context(_paths)) AppLog.Write("context: " + c);
+        int i = 0;
+        foreach (var s in _queue) AppLog.Write($"plan: step {++i}: {s.Title}");
         Next();
     }
 
@@ -101,8 +100,6 @@ public sealed class JobRunner
         Current = null;
         Emit($"===== {name}: finished {DateTime.Now:HH:mm} =====", LineKind.Header);
         foreach (var r in Results) Emit("  " + r, r.Contains(": ok") || r.Contains("installed") ? LineKind.Good : LineKind.Warn);
-        _log?.Dispose();
-        _log = null;
         StateChanged?.Invoke();
         JobFinished?.Invoke(name);
     }
@@ -120,6 +117,7 @@ public sealed class JobRunner
             StandardErrorEncoding = Encoding.UTF8,
         };
         foreach (var a in s.Args()) psi.ArgumentList.Add(a);
+        AppLog.Write($"command: \"{_paths.Pwsh}\" {string.Join(" ", psi.ArgumentList.Select(a => a.Contains(' ') ? "\"" + a + "\"" : a))}  (in {_paths.Tools})");
         psi.Environment["PSX_GUI"] = "1";                 // easy\ scripts: no "Press Enter" pauses
         psi.Environment["NO_COLOR"] = "1";
         var p = new Process { StartInfo = psi, EnableRaisingEvents = true };
@@ -130,6 +128,7 @@ public sealed class JobRunner
         p.BeginOutputReadLine();
         p.BeginErrorReadLine();
         _proc = p;
+        AppLog.Write($"started: process {p.Id}");
     }
 
     private void OnOutput(Step s, string raw)
@@ -153,6 +152,7 @@ public sealed class JobRunner
     {
         p.WaitForExit();   // drain the async output first
         var code = p.ExitCode;
+        AppLog.Write($"exited: process {p.Id}, exit code {code}{(_stopping ? " (stopped by the user)" : "")}");
         if (s.Game == null) s.Ok = code == 0;
         Finish(s, s.Ok);
     }
@@ -163,7 +163,18 @@ public sealed class JobRunner
         var mins = (DateTime.UtcNow - StepStartedUtc).TotalMinutes;
         Emit($"--- step {StepIndex}/{StepCount} ended after {mins:F0} min: {(ok ? "ok" : _stopping ? "stopped" : "problem (see above)")}",
              ok ? LineKind.Good : LineKind.Warn);
-        try { s.After?.Invoke(s, ok); } catch (Exception e) { Emit("After-step error: " + e.Message, LineKind.Bad); }
+        // A failed game step: the real error is usually in the game's own logs, not in the summary above.
+        // Copy their last lines into this log so it explains the failure on its own.
+        if (!ok && !_stopping && s.Game != null)
+        {
+            var gameDir = Path.Combine(_paths.WorkDir, s.Game);
+            foreach (var (f, n) in new[] { ("build-android.log", 80), ("regen.log", 30), ("build-mingw-build.log", 30) })
+            {
+                var file = Path.Combine(gameDir, f);
+                if (File.Exists(file)) AppLog.Block($"{s.Game}\\{f} (last {n} lines)", AppLog.Tail(file, n));
+            }
+        }
+        try { s.After?.Invoke(s, ok); } catch (Exception e) { Emit("After-step error: " + e.Message, LineKind.Bad); AppLog.Write(e.ToString()); }
         _proc?.Dispose();
         _proc = null;
         if (_stopping) _queue.Clear();
@@ -172,7 +183,7 @@ public sealed class JobRunner
 
     public void Emit(string line, LineKind kind)
     {
-        try { _log?.WriteLine($"[{DateTime.Now:HH:mm:ss}] {line}"); } catch { }
+        AppLog.Write(line);
         Line?.Invoke(line, kind);
     }
 

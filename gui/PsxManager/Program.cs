@@ -14,6 +14,19 @@ internal static class Program
                             "PSX Manager", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
+        AppLog.Init(paths);
+        AppLog.Write("===== PSX Manager opened =====");
+        foreach (var c in AppLog.Context(paths)) AppLog.Write("context: " + c);
+        // PSX Manager's own errors go to the log too (and a message instead of a silent close).
+        Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+        Application.ThreadException += (_, e) =>
+        {
+            AppLog.Write("PSX Manager error: " + e.Exception);
+            MessageBox.Show("PSX Manager hit an error (details saved in the log):\n\n" + e.Exception.Message, "PSX Manager",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => AppLog.Write("PSX Manager crashed: " + e.ExceptionObject);
         Application.Run(new MainForm(paths));
+        AppLog.Write("===== PSX Manager closed =====");
     }
 }

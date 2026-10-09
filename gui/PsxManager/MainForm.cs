@@ -174,8 +174,11 @@ public sealed class MainForm : Form
         var b = new Button { Text = text, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowOnly, MinimumSize = new Size(150, 36), Padding = new Padding(6, 0, 6, 0) };
         b.Click += (_, _) =>
         {
-            if (_runner.Busy) { MessageBox.Show(this, "A job is already running. Wait for it, or press Stop.", "PSX Manager"); return; }
-            try { action(); } catch (Exception e) { AppendLog("Error: " + e.Message, LineKind.Bad); }
+            AppLog.Write($"click: {text} | ticked: {string.Join(", ", Ticked().DefaultIfEmpty("(none)"))} | " +
+                         $"options: speed limit {_speedMin.Value} min, read phone first {_readPhone.Checked}, install after {_installAfter.Checked}, " +
+                         $"test {_testSec.Value} s | phone {(_phoneConnected ? "connected" : "not connected")}");
+            if (_runner.Busy) { AppLog.Write("  (refused: a job is already running)"); MessageBox.Show(this, "A job is already running. Wait for it, or press Stop.", "PSX Manager"); return; }
+            try { action(); } catch (Exception e) { AppendLog("Error: " + e.Message, LineKind.Bad); AppLog.Write(e.ToString()); }
         };
         _tips.SetToolTip(b, tip);
         _jobButtons.Add(b);
@@ -461,6 +464,20 @@ public sealed class MainForm : Form
     }
 
     // ------------------------------------------------------------------ health + log
+    // Health in the log: at once when the verdict changes (e.g. Working -> Stuck), else every 5 min of a job.
+    private Verdict _loggedVerdict = Verdict.Idle;
+    private DateTime _loggedHealthUtc = DateTime.MinValue;
+    private void LogHealth(HealthReport r)
+    {
+        if (!_runner.Busy) { _loggedVerdict = Verdict.Idle; return; }
+        if (r.Verdict == _loggedVerdict && (DateTime.UtcNow - _loggedHealthUtc).TotalMinutes < 5) return;
+        _loggedVerdict = r.Verdict;
+        _loggedHealthUtc = DateTime.UtcNow;
+        var top = string.Join("; ", r.Workers.Take(4).Select(w => $"{w.Name} {w.CpuPercent:F0}% {w.MemGb:F1} GB"));
+        AppLog.Write($"health: {r.Verdict} - {r.Headline} | phase {(r.Phase == "" ? "-" : r.Phase)} for {Health.Fmt(r.PhaseAge)}, " +
+                     $"last output {Health.Fmt(r.QuietFor)} ago | RAM {r.FreeRamGb:F1}/{r.TotalRamGb:F0} GB free | {(top == "" ? "no workers" : top)}");
+    }
+
     private void UpdateHealth()
     {
         HealthReport r;
@@ -476,6 +493,7 @@ public sealed class MainForm : Form
             _ => (Theme.Border, Theme.Dim),
         };
         _headline.Text = r.Headline;
+        LogHealth(r);
         if (_runner.Busy)
         {
             var step = _runner.Current;

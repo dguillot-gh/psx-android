@@ -130,19 +130,43 @@ if (-not $NoLaunch) {
 }
 Write-Host "The report finishes when the game crashes or you close it (swipe it away), or after $Minutes min."
 
-$seen = $false; $deadline = (Get-Date).AddMinutes($Minutes); $lastNote = Get-Date
+$seen = $false; $deadline = (Get-Date).AddMinutes($Minutes); $gpid = ""; $livePid = ""   # livePid: kept after the game ends, for its last lines
+# Live view: the game's own lines appear here (PSX Manager's log window) as they happen. The frame rate is
+# shown every 10 s instead of every second; Android's noise from other apps is left out (it's all in phone.log).
+$pos = 0L; $lastFps = Get-Date; $partial = ""
+function Show-NewLines {
+    try {
+        $fs = [System.IO.FileStream]::new($log, 'Open', 'Read', 'ReadWrite')
+        if ($fs.Length -lt $script:pos) { $script:pos = 0 }
+        $fs.Seek($script:pos, 'Begin') | Out-Null
+        $sr = [System.IO.StreamReader]::new($fs)
+        $text = $script:partial + $sr.ReadToEnd()
+        $script:pos = $fs.Position
+        $sr.Dispose()
+    } catch { return }
+    $parts = $text -split "`r?`n"
+    $script:partial = $parts[-1]                       # an unfinished last line waits for the next read
+    foreach ($l in $parts[0..($parts.Count - 2)]) {
+        if (-not $l) { continue }
+        $mine = $script:livePid -and $l -match " $($script:livePid) "
+        if ($l -match '\[FPS\] game: ([\d.]+) fps') {
+            if ($mine -and ((Get-Date) - $script:lastFps).TotalSeconds -ge 10) { $script:lastFps = Get-Date; Write-Host "game: $($Matches[1]) fps" }
+        } elseif ($mine -and $l -match ' (psxrecomp|psxcrash|SDL/APP|libc|DEBUG|AndroidRuntime)\s*: (.*)$') {
+            Write-Host "game: $($Matches[2])"
+        } elseif ($l -match "FATAL EXCEPTION|ANR in $([regex]::Escape($Package))|lowmemorykiller: Kill '$([regex]::Escape($Package))|$([regex]::Escape($Package)):game.*has died") {
+            Write-Host "phone: $($l -replace '^\S+ \S+\s+\d+\s+\d+\s+\w\s+', '')"
+        }
+    }
+}
 while ((Get-Date) -lt $deadline) {
     Start-Sleep -Seconds 2
     $gpid = ((& $adb shell pidof "$($Package):game" 2>$null) -join "").Trim()
     if ($gpid) {
-        if (-not $seen) { Write-Host "Game running (process $gpid). Recording..." }
-        $seen = $true
-    } elseif ($seen) { Write-Host "Game stopped. Finishing the report..."; break }
-    if (((Get-Date) - $lastNote).TotalSeconds -ge 60) {
-        $lastNote = Get-Date
-        $f = Select-String -Path $log -Pattern '\[FPS\] game: ([\d.]+) fps' -ErrorAction SilentlyContinue | Select-Object -Last 1
-        Write-Host ("still recording{0}" -f $(if ($f) { ", game at $($f.Matches[0].Groups[1].Value) fps" } else { "" }))
+        if (-not $seen) { Write-Host "Game running (process $gpid). Recording; its messages follow live:" }
+        $seen = $true; $livePid = $gpid
     }
+    Show-NewLines
+    if (-not $gpid -and $seen) { Start-Sleep -Seconds 2; Show-NewLines; Write-Host "Game stopped. Finishing the report..."; break }
 }
 Start-Sleep -Seconds 3   # let the crash lines reach the log
 Stop-Process -Id $rec.Id -Force -ErrorAction SilentlyContinue
