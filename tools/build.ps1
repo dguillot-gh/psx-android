@@ -38,6 +38,32 @@ if (-not (Test-Path $props) -or -not (Select-String -Path $props -SimpleMatch $s
     Write-Host "Wrote $props"
 }
 
+# --- Per-game BIOS -------------------------------------------------------------
+# Every app bundles the free OpenBIOS. A game that needs Sony's BIOS names it in <GameDir>\android-bios.txt
+# (one line, a file in framework\psxrecomp\bios\, e.g. SCPH1001.BIN): it is copied into this app and
+# written into its game.toml.in, so the app passes it to the engine. Mizzurna Falls' fan translation
+# keeps its own code in low RAM that OpenBIOS uses: fail-fast at 0x8000C000 (2026-10-09).
+# Such an APK contains Sony's BIOS: for your own phone only, not for sharing.
+$assets = Join-Path $android "app\src\main\assets"
+$tomlIn = Join-Path $assets "game.toml.in"
+$biosWant = Join-Path $GameDir "android-bios.txt"
+$biosName = if (Test-Path $biosWant) { (Get-Content $biosWant -TotalCount 1).Trim() } else { "" }
+Get-ChildItem (Join-Path $assets "bios") -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -notin "openbios.bin", "OpenBIOS.LICENSE", $biosName } | Remove-Item -Force
+if ($biosName) {
+    $src = Join-Path $FrameworkDir "bios\$biosName"
+    if (-not (Test-Path $src)) { Write-Host "FAIL: android-bios.txt names $biosName, but $src does not exist"; exit 1 }
+    New-Item -ItemType Directory -Force (Join-Path $assets "bios") | Out-Null
+    Copy-Item $src (Join-Path $assets "bios\$biosName") -Force
+    Write-Host "BIOS: $biosName (from android-bios.txt)"
+}
+if (Test-Path $tomlIn) {
+    $want = if ($biosName) { "bios/$biosName" } else { "bios/openbios.bin" }
+    $t = Get-Content $tomlIn -Raw
+    $n = [regex]::Replace($t, '(?m)^path = "bios/[^"]*"', "path = `"$want`"")
+    if ($n -ne $t) { Set-Content -Path $tomlIn -Value $n -NoNewline -Encoding utf8NoBOM }
+}
+
 # --- Gradle ------------------------------------------------------------------
 $wrapper = Join-Path $android "gradle\wrapper\gradle-wrapper.jar"
 # --no-daemon: no Gradle process stays running afterwards with files open on the USB drive.

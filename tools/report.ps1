@@ -38,7 +38,7 @@ function Write-Verdict([string]$dir) {
         $v += "CRASHED: the app stopped with a native crash."
         $f = ($native | Where-Object { $_ -match 'FORTIFY|Abort message' } | Select-Object -First 1)
         if ($f -match 'destroyed mutex') {
-            $v += "  Cause: a tap or key reached SDL after one of its locks was destroyed (known Android-layer bug, Mizzurna Falls 2026-10-09)."
+            $v += "  This is a side effect: the engine had already called exit() and Android's text drawing hit a lock freed by the exit. The real reason is the engine's (ENGINE STOPPED below, if any)."
         }
         $next += "Send this report to whoever maintains the engine; the backtrace lines below say where it died."
         $key += $native | Select-Object -First 40
@@ -74,7 +74,25 @@ function Write-Verdict([string]$dir) {
         }
     }
     $crash = Join-Path $dir "psx_last_run_report.json"
-    if (Test-Path $crash) { $key += "", "Engine crash report (psx_last_run_report.json) is included." }
+    if (Test-Path $crash) {
+        $key += "", "Engine crash report (psx_last_run_report.json) is included."
+        # The engine's own reason for stopping, when it stopped on purpose (fail-fast). report.ps1 pulls
+        # the file after the run; it is this run's when its time is after the recording started.
+        try {
+            $j = Get-Content $crash -Raw | ConvertFrom-Json
+            $rec = ($info | Where-Object { $_ -match '^recorded: ' }) -replace '^recorded: ', ''
+            $fresh = (-not $rec) -or ([datetime]$j.timestamp).ToLocalTime() -ge ([datetime]$rec).AddMinutes(-1)
+            if ($fresh -and $j.reason -and $j.reason -ne "atexit") {
+                $v += "ENGINE STOPPED ON PURPOSE: $($j.reason -replace '\s+', ' ' -replace ' — see.*$', '')"
+                if ($j.reason -match 'unknown dispatch: addr=0x8000([0-9A-F]{4})') {
+                    $v += "  The game jumped into low RAM (0x8000$($Matches[1])), below its program: usually extra code from a fan translation / patch that expects Sony's BIOS."
+                    $next += "Try Sony's BIOS for this game: put a file android-bios.txt containing SCPH1001.BIN in its android-recomp folder, then Build / update (Mizzurna Falls, 2026-10-09)."
+                } elseif ($j.reason -match 'unknown dispatch') {
+                    $next += "The game ran code the recompiler never found. Send this report to whoever maintains the engine."
+                }
+            }
+        } catch { }
+    }
 
     $out = @("PSX report for $pkg", ($info | Where-Object { $_ -notmatch '^package=' }), "",
              "VERDICT", ($v | ForEach-Object { "  $_" }), "")
