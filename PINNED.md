@@ -13,7 +13,9 @@ The one list of what's next. Details and history: CONTEXT.md (PINNED LIST sectio
    LEGO Island 2, Gex 1-3.
 
 ## Known game issues
-- Policenauts opening ~30 fps. Parasite Eve 2: no sound. Persona 2 / Tomba 2 cutscene lag (re-check).
+- Policenauts: speed FIXED 2026-10-09 (18 -> 61 fps). Tap-to-point mouse: right-side taps slid to the bottom (cursor
+  address freezes on some screens); fallback to a blind move committed, needs a test after the next Policenauts build.
+- Parasite Eve 2: no sound. Persona 2 / Tomba 2 cutscene lag (re-check).
 - Mizzurna Falls needs Sony's BIOS (android-bios.txt = SCPH1001.BIN, done): the APK contains the BIOS, so don't share it.
 
 ## Later / ideas
