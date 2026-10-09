@@ -25,7 +25,14 @@ if (-not (Test-Path $box)) {
     # The archive names covers by their Redump name; a few discs carry a longer region than the
     # cover entry ("(USA, Canada)" vs "(USA)"), so that shorter form is tried too.
     $short = $cue.BaseName -replace '\(USA, Canada\)', '(USA)'
-    & $py psxrecomp\tools\new_project_layout\fetch_boxart.py --cue-stem $cue.BaseName --name $short `
+    $stem = $cue.BaseName
+    # boxart-name.txt (in the game's folder or recomps\<name>, exported with the game): the cover's exact
+    # name in libretro-thumbnails, for discs whose name differs (fan translations, "Einhaender").
+    $override = @((Join-Path $GameDir "boxart-name.txt"),
+                  (Join-Path $DriveRoot ("recomps\" + (Split-Path $GameDir -Leaf) + "\boxart-name.txt"))) |
+                Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($override) { $short = (Get-Content $override -TotalCount 1).Trim(); $stem = $short }
+    & $py psxrecomp\tools\new_project_layout\fetch_boxart.py --cue-stem $stem --name $short `
         --out (Join-Path $img "boxart.tga") --png-out $box *> (Join-Path $img "fetch.log")
     Pop-Location
     if (-not (Test-Path $box)) { Write-Host "icon: no box art found online (see $img\fetch.log); keeping the default icon"; exit 2 }

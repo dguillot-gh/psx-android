@@ -14,7 +14,7 @@ $root = Split-Path $PSScriptRoot -Parent
 $out = Join-Path $root "games"
 $recomps = Join-Path $DriveRoot "recomps"
 $work = $DefaultWorkDir
-$files = "game.toml", "aot_exclude.txt", "extra_discs.txt", "android-bios.txt", "README.md", "REFERENCE.md", "VERSION",
+$files = "game.toml", "aot_exclude.txt", "extra_discs.txt", "android-bios.txt", "boxart-name.txt", "README.md", "REFERENCE.md", "VERSION",
          "CMakeLists.txt", "build.ps1", "catalog_identity.json", "disc_probe.json"
 $dirs = "seeds", "tools"
 # One line per game for its README (update after testing). Games not listed: "Set up, not built yet."
