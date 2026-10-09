@@ -59,3 +59,9 @@
 [submodule "games/tomba_recomp"]
 	path = games/tomba_recomp
 	url = https://github.com/dguillot-gh/tomba-android.git
+[submodule "games/racinglagoon_recomp"]
+	path = games/racinglagoon_recomp
+	url = https://github.com/dguillot-gh/racinglagoon-android.git
+[submodule "games/mizzurnafallsthechillingcut_recomp"]
+	path = games/mizzurnafallsthechillingcut_recomp
+	url = https://github.com/dguillot-gh/mizzurnafallsthechillingcut-android.git

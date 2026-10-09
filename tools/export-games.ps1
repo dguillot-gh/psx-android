@@ -14,7 +14,7 @@ $root = Split-Path $PSScriptRoot -Parent
 $out = Join-Path $root "games"
 $recomps = Join-Path $DriveRoot "recomps"
 $work = $DefaultWorkDir
-$files = "game.toml", "aot_exclude.txt", "extra_discs.txt", "README.md", "REFERENCE.md", "VERSION",
+$files = "game.toml", "aot_exclude.txt", "extra_discs.txt", "android-bios.txt", "README.md", "REFERENCE.md", "VERSION",
          "CMakeLists.txt", "build.ps1", "catalog_identity.json", "disc_probe.json"
 $dirs = "seeds", "tools"
 # One line per game for its README (update after testing). Games not listed: "Set up, not built yet."
@@ -32,9 +32,11 @@ $GameStatus = @{
     "policenauts_recomp"   = "Plays (2026-10-07) with the touch trackpad (Sony Mouse). Known issue: slow opening (about 30 fps). Japanese release, 2 discs."
     "tomba_recomp"         = "Plays (2026-10-07): steady 60 fps on a Pixel 8."
     "tomba2_recomp"        = "Plays (2026-10-07) on a Pixel 8; GPU renderer recommended (menu > Display)."
-    "gt2sim_recomp"        = "NOT WORKING YET: the recompiler mistakes data for code and makes ~5 GB of C. Needs investigation."
-    "lod_recomp"           = "NOT WORKING YET: same data-as-code problem as GT2. 4 discs. Set aside."
+    "gt2sim_recomp"        = "Builds and installs (2026-10-08, after the recompiler data-as-code fix: 32 MB of C). First boot not checked yet."
+    "lod_recomp"           = "Code generation fixed (2026-10-08: 11 MB of C, was 1.45 GB). Not built yet. 4 discs."
     "gt2arcade_recomp"     = "Set aside (not built). Likely the same data-as-code problem as GT2 Simulation."
+    "mizzurnafallsthechillingcut_recomp" = "Plays (2026-10-09) on a Pixel 8. Fan translation (Cirosan): needs Sony's BIOS SCPH1001 (android-bios.txt); on OpenBIOS it stops at New game."
+    "racinglagoon_recomp"  = "Builds and installs (2026-10-09). Not play-tested yet."
 }
 # recomps-later\ holds games set aside from the pipeline for now; their setup is kept too.
 $later = Join-Path $DriveRoot "recomps-later"
