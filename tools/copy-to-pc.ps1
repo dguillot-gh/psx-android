@@ -1,6 +1,6 @@
 # Copy what's needed to build and install the games from this drive onto a PC's own disk (much faster than
 # building on the USB drive, and the drive can then be unplugged). Hand-written, 2026-10-09.
-# Start it with "COPY TO THIS PC.cmd" at the top of the drive (or: powershell -File tools\copy-to-pc.ps1).
+# Start it with "COPY TO THIS PC.ps1" at the top of the drive (right-click > Run with PowerShell).
 # Runs in the Windows PowerShell built into Windows: nothing to install.
 #   1. Pick where to put it (a "recomp-backups" folder is made there).
 #   2. Pick which games to bring (each game's setup + disc; all ticked by default).
