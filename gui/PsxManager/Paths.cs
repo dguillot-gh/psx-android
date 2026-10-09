@@ -13,6 +13,7 @@ public sealed class Paths
     public string Apks => Path.Combine(DriveRoot, "apks");
     public string ToolsCache => Path.Combine(DriveRoot, "tools-cache");
     public string Logs => Path.Combine(Tools, "logs");
+    public string Reports => Path.Combine(DriveRoot, "reports");   // tools\report.ps1 ("Report a problem")
     public string ProgressLog => Path.Combine(Tools, "progress.log");
 
     public string Pwsh

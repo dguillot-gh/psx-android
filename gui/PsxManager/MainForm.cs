@@ -125,9 +125,14 @@ public sealed class MainForm : Form
         AddJob(buttons, "Phone storage...", "See the phone's free space and remove spare disc copies.", StorageJob);
         AddJob(buttons, "Save to GitHub", "Upload the games' setups, scripts and engine to your repositories.", GithubJob);
         AddJob(buttons, "Update engine...", "Get the newest psxrecomp, test it, switch only if you say yes (opens its own window).", UpdateEngineJob);
+        AddJob(buttons, "Report a problem", "Tick ONE game: it opens on the phone and everything it logs is recorded while you play. " +
+            "Close the game (or let it crash) to finish; you get a report with a plain-English verdict.", ReportJob);
         var logsBtn = new Button { Text = "Open logs folder", AutoSize = true, MinimumSize = new Size(150, 36), Padding = new Padding(6, 0, 6, 0) };
         logsBtn.Click += (_, _) => { Directory.CreateDirectory(_p.Logs); Process.Start(new ProcessStartInfo("explorer.exe", _p.Logs) { UseShellExecute = true }); };
         buttons.Controls.Add(logsBtn);
+        var reportsBtn = new Button { Text = "Open reports", AutoSize = true, MinimumSize = new Size(150, 36), Padding = new Padding(6, 0, 6, 0) };
+        reportsBtn.Click += (_, _) => { Directory.CreateDirectory(_p.Reports); Process.Start(new ProcessStartInfo("explorer.exe", _p.Reports) { UseShellExecute = true }); };
+        buttons.Controls.Add(reportsBtn);
         _stop.Click += (_, _) => _runner.Stop();
         _tips.SetToolTip(_stop, "Always safe: finished work is kept; press the same job again later to continue.");
         buttons.Controls.Add(_stop);
@@ -374,6 +379,42 @@ public sealed class MainForm : Form
         if (dlg.InstallAfter) steps.Add(PhoneStep(game, (int)_testSec.Value, () => !_runner.GameOk.GetValueOrDefault(game)));
         Begin($"Add new game {game}", steps);
         AppendLog("A brand-new game may still need a programmer before it plays right (see easy\\README.md).", LineKind.Info);
+    }
+
+    private void ReportJob()
+    {
+        var games = TickedGames(); if (games.Count == 0) return;
+        if (games.Count > 1) { MessageBox.Show(this, "Tick just ONE game to report on.", "PSX Manager"); return; }
+        if (!NeedPhone()) return;
+        var g = games[0];
+        if (_installed != null && !_installed.Contains(g.Package)) { MessageBox.Show(this, $"{g.Name} isn't on the phone. Put it on the phone first.", "PSX Manager"); return; }
+        MessageBox.Show(this, $"{g.Name} will open on the phone and everything it logs is recorded.\n\n" +
+            "Press Play and play until the problem happens.\nThen close the game (swipe it away), or let it crash: the report finishes by itself.",
+            "Report a problem", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        var started = DateTime.Now;
+        Begin($"Report on {g.Name}", new[] { new Step
+        {
+            Title = $"Recording {g.Name} (close the game to finish)",
+            Args = () => Pwsh(Path.Combine("tools", "report.ps1"), "-Package", g.Package, "-Game", g.Name),
+            After = (s, ok) =>
+            {
+                // Newest report folder for this game, made by this run.
+                var stem = g.Name.EndsWith("_recomp") ? g.Name[..^7] : g.Name;
+                var dir = new DirectoryInfo(_p.Reports).Exists
+                    ? new DirectoryInfo(_p.Reports).EnumerateDirectories(stem + "-*")
+                        .Where(d => d.CreationTime >= started.AddMinutes(-1)).OrderBy(d => d.CreationTime).LastOrDefault()
+                    : null;
+                if (dir == null) { _runner.Results.Add($"{g.Name}: no report (recording never started)"); return; }
+                var report = Path.Combine(dir.FullName, "REPORT.txt");
+                if (!File.Exists(report))   // stopped with Stop: write the verdict from what was recorded
+                    Shell.Run(_p.Pwsh, new[] { "-NoProfile", "-File", Path.Combine(_p.Tools, "tools", "report.ps1"), "-Analyze", dir.FullName }, 120000);
+                if (!File.Exists(report)) { _runner.Results.Add($"{g.Name}: report folder {dir.FullName} (no verdict)"); return; }
+                foreach (var l in File.ReadLines(report).SkipWhile(l => l != "VERDICT").Skip(1).TakeWhile(l => l.Length > 0))
+                    _runner.Results.Add($"{g.Name}: {l.Trim()}");
+                _runner.Results.Add($"{g.Name}: report in {dir.FullName}");
+                try { Process.Start(new ProcessStartInfo("notepad.exe", report) { UseShellExecute = true }); } catch { }
+            },
+        } });
     }
 
     private void BackupJob()

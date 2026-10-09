@@ -1,0 +1,141 @@
+# Report a problem: record everything a game logs on the phone while you play, then write a report
+# with a plain-English verdict. Hand-written 2026-10-09 (PSX Manager's "Report a problem" button).
+#   pwsh -File tools\report.ps1 -Package com.psxrecomp.tomba2 -Game tomba2_recomp
+#   pwsh -File tools\report.ps1 -Package ... -Game ... -NoLaunch     (record a game you already opened)
+#   pwsh -File tools\report.ps1 -Analyze <folder>                    (redo the verdict of an old report)
+# Play until the problem happens. The report finishes by itself when the game crashes or you close it
+# (swipe it away), or after -Minutes. Output: <drive>\recomp-backups\reports\<game>-<date>\
+#   REPORT.txt   verdict, what to do next, the lines that matter
+#   phone.log    everything the phone logged while recording
+#   game.toml, psx_last_run_report.json   the game's settings and the engine's own crash report (if any)
+# and a .zip of the folder, small enough to send to whoever fixes it.
+param([string]$Package, [string]$Game, [int]$Minutes = 60, [switch]$NoLaunch, [string]$Analyze = "")
+$ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "paths.ps1")
+
+function Write-Verdict([string]$dir) {
+    $log = Join-Path $dir "phone.log"
+    $info = Get-Content (Join-Path $dir "info.txt") -ErrorAction SilentlyContinue
+    $pkg = ($info | Where-Object { $_ -match '^package=' }) -replace '^package=', ''
+    $lines = @(Get-Content $log -ErrorAction SilentlyContinue)
+    # The game runs in its own process "<package>:game"; collect its process ids from the start lines.
+    $pids = @($lines | Select-String -Pattern "Start proc (\d+):$([regex]::Escape($pkg)):game" |
+              ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -Unique)
+    $mine = @($lines | Where-Object { $l = $_; $pids | Where-Object { $l -match " $_ " } })
+    $engine = @($mine | Where-Object { $_ -match ' psxrecomp: ' })
+    $fpsLines = @($engine | Where-Object { $_ -match '\[FPS\] game: ([\d.]+) fps' })
+    $fps = @($fpsLines | ForEach-Object { if ($_ -match '\[FPS\] game: ([\d.]+) fps') { [double]$Matches[1] } } | Select-Object -Skip 2)
+
+    $v = @(); $next = @(); $key = @()
+    $native = @($mine | Where-Object { $_ -match ' F libc |Fatal signal|FORTIFY|Abort message|#\d\d pc ' })
+    $java = @($lines | Where-Object { $_ -match "FATAL EXCEPTION|AndroidRuntime: Process: $([regex]::Escape($pkg))" })
+    $anr = @($lines | Where-Object { $_ -match "ANR in $([regex]::Escape($pkg))" })
+    $lmk = @($lines | Where-Object { $_ -match "lowmemorykiller: Kill '$([regex]::Escape($pkg))" })
+    $died = @($lines | Where-Object { $_ -match "has died.*$([regex]::Escape($pkg)):game|$([regex]::Escape($pkg)):game \(pid \d+\) has died" })
+    $guest = @($engine | Where-Object { $_ -match 'INTERP: |NULL jump|unknown COP|FAIL|FATAL|fatal|stale-static|dispatch miss' })
+
+    if ($native) {
+        $v += "CRASHED: the app stopped with a native crash."
+        $f = ($native | Where-Object { $_ -match 'FORTIFY|Abort message' } | Select-Object -First 1)
+        if ($f -match 'destroyed mutex') {
+            $v += "  Cause: a tap or key reached SDL after one of its locks was destroyed (known Android-layer bug, Mizzurna Falls 2026-10-09)."
+        }
+        $next += "Send this report to whoever maintains the engine; the backtrace lines below say where it died."
+        $key += $native | Select-Object -First 40
+    }
+    if ($java) { $v += "CRASHED: the app's Java/menu side threw an error."; $key += $java | Select-Object -First 20 }
+    if ($anr) { $v += "FROZE: Android said the app stopped responding (ANR)."; $key += $anr | Select-Object -First 5 }
+    if ($lmk) {
+        $v += "KILLED BY ANDROID: the phone ran low on memory and closed the game."
+        $next += "Close other apps before playing; on the GPU renderer try a lower internal resolution."
+        $key += $lmk | Select-Object -First 5
+    }
+    if ($guest) {
+        $v += "GAME CODE PROBLEM: the engine reported code it could not run ($($guest.Count) line(s))."
+        $next += "Play the same spot again so the phone records it, then Build / update (speed) the game; if it stays, it needs the recompiler."
+        $key += $guest | Select-Object -First 20
+    }
+    if ($fps.Count -gt 0) {
+        $avg = ($fps | Measure-Object -Average).Average
+        $slow = @($fps | Where-Object { $_ -lt 50 }).Count
+        $min = ($fps | Measure-Object -Minimum).Minimum
+        $line = "Speed: average {0:N1} fps, lowest {1:N1}, {2} of {3} seconds under 50 fps." -f $avg, $min, $slow, $fps.Count
+        if ($slow -gt [Math]::Max(5, $fps.Count / 10)) {
+            $v += "SLOW: " + $line
+            $next += "Slow spots usually speed up after playing them once and then running Build / update with the speed pre-compile."
+        } else { $v += $line }
+    }
+    if (-not ($native -or $java -or $anr -or $lmk)) {
+        if ($died) { $v += "The game was closed (no crash recorded): swiped away, or stopped by Android." }
+        elseif ($pids.Count -eq 0) { $v += "The game never started while recording (was it open already? use -NoLaunch, or check the disc is picked)." }
+        else { $v += "Still running when recording stopped; no crash recorded." }
+        if ($fpsLines.Count -gt 0) {
+            $v += "If the picture froze but this says it kept running, the GAME is stuck (engine still at full speed): note where, and send this report."
+        }
+    }
+    $crash = Join-Path $dir "psx_last_run_report.json"
+    if (Test-Path $crash) { $key += "", "Engine crash report (psx_last_run_report.json) is included." }
+
+    $out = @("PSX report for $pkg", ($info | Where-Object { $_ -notmatch '^package=' }), "",
+             "VERDICT", ($v | ForEach-Object { "  $_" }), "")
+    if ($next) { $out += "WHAT TO DO", ($next | Select-Object -Unique | ForEach-Object { "  $_" }), "" }
+    $out += "ENGINE MESSAGES (start of the last run)", ($engine | Where-Object { $_ -notmatch '\[FPS\]' } | Select-Object -Last 30), ""
+    if ($key) { $out += "KEY LINES", $key }
+    Set-Content (Join-Path $dir "REPORT.txt") $out -Encoding utf8
+    $v | ForEach-Object { Write-Host "VERDICT: $_" }
+}
+
+if ($Analyze) { Write-Verdict $Analyze; exit 0 }
+if (-not $Package -or -not $Game) { Write-Host "FAIL: -Package and -Game are needed"; exit 1 }
+$adb = Find-Adb
+if (-not $adb) { Write-Host "FAIL: adb not found (run tools\setup.ps1)"; exit 1 }
+if (-not (Get-Process adb -ErrorAction SilentlyContinue)) {   # detached: see phone.ps1
+    Start-Process -FilePath $adb -ArgumentList "start-server" -WindowStyle Hidden; Start-Sleep -Seconds 3
+}
+if (-not (@(& $adb devices) -match "`tdevice$")) { Write-Host "FAIL: no phone connected (USB, unlocked, debugging allowed)"; exit 1 }
+
+$dir = Join-Path (Join-Path $DriveRoot "reports") ("{0}-{1}" -f ($Game -replace '_recomp$', ''), (Get-Date -Format "yyyyMMdd-HHmm"))
+New-Item -ItemType Directory -Force $dir | Out-Null
+$apk = Get-ChildItem (Join-Path $DefaultWorkDir "$Game\apk") -Filter *.apk -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
+$installed = ((& $adb shell dumpsys package $Package) -match 'lastUpdateTime' | Select-Object -First 1) -replace '^\s+', ''
+Set-Content (Join-Path $dir "info.txt") @("package=$Package", "game: $Game", "recorded: $(Get-Date -Format 'yyyy-MM-dd HH:mm')",
+    "newest APK on the drive: $(if ($apk) { $apk.Name } else { 'none' })", "on the phone: $installed") -Encoding utf8
+
+& $adb logcat -c
+$log = Join-Path $dir "phone.log"
+$rec = Start-Process -FilePath $adb -ArgumentList "logcat", "-v", "threadtime", "-b", "all" -RedirectStandardOutput $log -WindowStyle Hidden -PassThru
+Write-Host "Recording to $dir"
+if (-not $NoLaunch) {
+    & $adb shell am force-stop $Package
+    & $adb shell monkey -p $Package -c android.intent.category.LAUNCHER 1 *> $null
+    Write-Host "Opened the game on the phone. Press Play, then play until the problem happens."
+}
+Write-Host "The report finishes when the game crashes or you close it (swipe it away), or after $Minutes min."
+
+$seen = $false; $deadline = (Get-Date).AddMinutes($Minutes); $lastNote = Get-Date
+while ((Get-Date) -lt $deadline) {
+    Start-Sleep -Seconds 2
+    $gpid = ((& $adb shell pidof "$($Package):game" 2>$null) -join "").Trim()
+    if ($gpid) {
+        if (-not $seen) { Write-Host "Game running (process $gpid). Recording..." }
+        $seen = $true
+    } elseif ($seen) { Write-Host "Game stopped. Finishing the report..."; break }
+    if (((Get-Date) - $lastNote).TotalSeconds -ge 60) {
+        $lastNote = Get-Date
+        $f = Select-String -Path $log -Pattern '\[FPS\] game: ([\d.]+) fps' -ErrorAction SilentlyContinue | Select-Object -Last 1
+        Write-Host ("still recording{0}" -f $(if ($f) { ", game at $($f.Matches[0].Groups[1].Value) fps" } else { "" }))
+    }
+}
+Start-Sleep -Seconds 3   # let the crash lines reach the log
+Stop-Process -Id $rec.Id -Force -ErrorAction SilentlyContinue
+foreach ($f in "game.toml", "psx_last_run_report.json") {
+    $t = Join-Path $dir $f
+    $p = Start-Process -FilePath $adb -ArgumentList "exec-out", "run-as", $Package, "cat", "files/$f" -RedirectStandardOutput $t -NoNewWindow -Wait -PassThru
+    if ($p.ExitCode -ne 0 -or (Get-Item $t).Length -eq 0 -or (Select-String -Path $t -Pattern 'No such file' -Quiet)) { Remove-Item $t -Force }
+}
+Write-Verdict $dir
+$zip = "$dir.zip"
+Compress-Archive -Path (Join-Path $dir "*") -DestinationPath $zip -Force
+Write-Host "Report: $dir\REPORT.txt"
+Write-Host "Zip to send: $zip"
+exit 0
