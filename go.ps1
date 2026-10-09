@@ -255,6 +255,17 @@ foreach ($g in $games) {
     New-Item -ItemType Directory -Force $apkStore | Out-Null
     Copy-Item $apk.FullName $apkStore
     Say "BUILD: done, $($apk.Name) (copy in $apkStore)"
+    # Housekeeping: keep the newest 2 builds of this game (one to roll back to) in its apk\ folder and in
+    # the dated apks\ folders; each copy is ~100 MB and every build used to add one for good.
+    $old = @(Get-ChildItem (Join-Path $gameDir "apk") -Filter "$g-*.apk" | Sort-Object LastWriteTime -Descending | Select-Object -Skip 2)
+    $old += @(Get-ChildItem (Split-Path $apkStore) -Recurse -Filter "$g-*.apk" -ErrorAction SilentlyContinue |
+              Sort-Object LastWriteTime -Descending | Select-Object -Skip 2)
+    if ($old.Count) {
+        $mb = ($old | Measure-Object Length -Sum).Sum / 1MB
+        $old | Remove-Item -Force -ErrorAction SilentlyContinue
+        Get-ChildItem (Split-Path $apkStore) -Directory | Where-Object { -not (Get-ChildItem $_.FullName -Force) } | Remove-Item -Force -ErrorAction SilentlyContinue
+        Say ("BUILD: removed {0} older APK copies of {1} ({2:N0} MB); the newest 2 are kept" -f $old.Count, $g, $mb)
+    }
     $built += @{ Game = $g; Package = $pkg; Apk = $apk.FullName }
     $results += "$g : $result, APK $($apk.Name) (copy in $apkStore)"
 }

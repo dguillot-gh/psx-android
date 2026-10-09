@@ -90,6 +90,19 @@ if (-not $NoPhone) {
 $count = @(& $py -c "import json,sys; print(len(json.load(open(sys.argv[1]))))" $all)[0]
 $digest = @(& $py (Join-Path $tools "captures.py") digest $all)[0]
 $hash = (@(& $recompiler --codegen-hash) -join "").Trim()
+# Housekeeping: pieces left in par\out_gNN by an unfinished run are labelled with the engine version that
+# made them (cgNN_<hash>_...). Ones from an older engine can never be used again; they were most of a
+# game's build folder (Tomba 2, 2026-10-09: 3.4 of 4.8 GB). Pieces for this engine stay, so a run resumes.
+if ($hash -match '^[0-9a-f]{8}$') {
+    $stale = @(Get-ChildItem (Join-Path $W "par") -Directory -Filter "out_g*" -ErrorAction SilentlyContinue |
+        ForEach-Object { Get-ChildItem $_.FullName -Recurse -Directory -Filter "cg*_*_*" -ErrorAction SilentlyContinue } |
+        Where-Object { $_.Name -match '^cg\d+_([0-9a-f]{8})_' -and $Matches[1] -ne $hash })
+    if ($stale.Count) {
+        $mb = ($stale | ForEach-Object { (Get-ChildItem $_.FullName -Recurse -File | Measure-Object Length -Sum).Sum } | Measure-Object -Sum).Sum / 1MB
+        $stale | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        Say ("SPEED: cleaned up {0} folder(s) of pieces from older engine versions ({1:N0} MB)" -f $stale.Count, $mb)
+    }
+}
 $cache = Join-Path $W "cache\$gameId\gcc\linux-arm64"
 $stamp = Join-Path $W "compiled.digest"
 Say "SPEED: $count piece(s) of game code to pre-compile (disc + play), codegen $hash"
