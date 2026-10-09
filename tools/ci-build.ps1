@@ -87,7 +87,7 @@ if (-not $NoUpdate) {
             } else { $new = $ours }   # unexpected layout: keep this PC's file
             if ($new -ne $ours) { Set-Content (Join-Path $dest "game.toml") $new -Encoding utf8NoBOM -NoNewline; Write-Host "  $($src.Name): game.toml updated" }
         }
-        foreach ($f in "aot_exclude.txt", "extra_discs.txt", "VERSION", "CMakeLists.txt", "build.ps1", "catalog_identity.json", "disc_probe.json", "play_captures.json") {
+        foreach ($f in "aot_exclude.txt", "extra_discs.txt", "android-bios.txt", "VERSION", "CMakeLists.txt", "build.ps1", "catalog_identity.json", "disc_probe.json", "play_captures.json") {
             $s = Join-Path $src.FullName $f
             if (Test-Path $s) { Copy-Item $s $dest -Force }
         }

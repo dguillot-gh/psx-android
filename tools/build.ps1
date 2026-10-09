@@ -47,12 +47,15 @@ if (-not (Test-Path $props) -or -not (Select-String -Path $props -SimpleMatch $s
 $assets = Join-Path $android "app\src\main\assets"
 $tomlIn = Join-Path $assets "game.toml.in"
 $biosWant = Join-Path $GameDir "android-bios.txt"
+# A game set up before its marker existed: the build PC's update (ci-build.ps1) refreshes recomps\<name>, not
+# the work folder, so look there too.
+if (-not (Test-Path $biosWant)) { $biosWant = Join-Path $DriveRoot ("recomps\" + (Split-Path $GameDir -Leaf) + "\android-bios.txt") }
 $biosName = if (Test-Path $biosWant) { (Get-Content $biosWant -TotalCount 1).Trim() } else { "" }
 Get-ChildItem (Join-Path $assets "bios") -File -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -notin "openbios.bin", "OpenBIOS.LICENSE", $biosName } | Remove-Item -Force
 if ($biosName) {
     $src = Join-Path $FrameworkDir "bios\$biosName"
-    if (-not (Test-Path $src)) { Write-Host "FAIL: android-bios.txt names $biosName, but $src does not exist"; exit 1 }
+    if (-not (Test-Path $src)) { Write-Host "FAIL: this game needs $biosName (android-bios.txt), but $src is missing. It is not on GitHub (Sony's copyright): copy your own $biosName into that folder."; exit 1 }
     New-Item -ItemType Directory -Force (Join-Path $assets "bios") | Out-Null
     Copy-Item $src (Join-Path $assets "bios\$biosName") -Force
     Write-Host "BIOS: $biosName (from android-bios.txt)"
