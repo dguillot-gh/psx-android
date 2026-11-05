@@ -28,9 +28,9 @@ The approved way is the same as Android Studio's: call Java directly.
 | Tool | Location / note |
 |---|---|
 | JDK 17 | `C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot` (pinned in `~/.gradle/gradle.properties`; Gradle 8.12 fails on JDK 25) |
-| Android SDK | `C:\Users\dguillot\AppData\Local\Android\Sdk`, NDK `28.2.13676358`, CMake 3.22.1 |
+| Android SDK | `%LOCALAPPDATA%\Android\Sdk`, NDK `28.2.13676358`, CMake 3.22.1 |
 | adb | `%LOCALAPPDATA%\Microsoft\WinGet\Packages\Google.PlatformTools_*\platform-tools\adb.exe` |
-| llvm-mingw (recompiler host build) | `C:\Users\dguillot\tools\llvm-mingw-20260922-ucrt-x86_64` (put `bin` on PATH to run the exes) |
+| llvm-mingw (recompiler host build) | `%USERPROFILE%\tools\llvm-mingw-20260922-ucrt-x86_64` (put `bin` on PATH to run the exes) |
 | Python 3.12 | `%LOCALAPPDATA%\Programs\Python\Python312\python.exe` (no PIL) |
 
 The recompiler is built with llvm-mingw into `psxrecomp/recompiler/build-mingw`
@@ -42,7 +42,7 @@ In Git Bash, set `MSYS_NO_PATHCONV=1` for adb device paths, but pass local APK p
 ## 3. Folder layout
 
 ```
-C:\Users\dguillot\Documents\recomp\
+%USERPROFILE%\Documents\recomp\
   policenauts_recomp\        Policenauts (SLPS-00215), package com.policenauts.recomp
   tomba_recomp\              Tomba! (SCUS-94236), package com.psxrecomp.tomba
   phone-backup\              earlier phone pulls (Policenauts app data tar, memcards, md5s)
@@ -108,7 +108,7 @@ Wireless debugging drops overnight; the user re-enables it on the phone.
 ## 5. Regenerating game code
 
 ```bash
-export PATH=/c/Users/dguillot/tools/llvm-mingw-20260922-ucrt-x86_64/bin:$PATH
+export PATH="$HOME"/tools/llvm-mingw-20260922-ucrt-x86_64/bin:$PATH
 cd <game>
 ./psxrecomp/recompiler/build-mingw/psxrecomp-game.exe --config game.toml
 ```

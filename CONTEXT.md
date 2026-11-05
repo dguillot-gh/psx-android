@@ -236,7 +236,7 @@ and SDL Java in `org.libsdl.app`. Never rename those two package names.
   pipe and hung speed.ps1 45 min); go.ps1 -Game takes a comma list, -NoInstall, -SpeedMinutes;
   tools\phone-pass.ps1 (install + disc + card + test for built games). Portable pwsh 7 segfaulted twice
   with two go.ps1 runs side by side: run long batches as one go.ps1 per game.
-- **GitHub (account dguillot-gh, all private):** psxrecomp-android (framework, default branch android, tag
+- **GitHub (account dguillot-gh; public: psxrecomp-android, psx-android, ff7-android; the per-game repos are private):** psxrecomp-android (framework, default branch android, tag
   android-pre-upstream, Actions DISABLED so upstream's desktop CI doesn't run), one repo per game
   (<name>-android, from games\<name>, strict .gitignore), psx-android (this repo; games\ and framework\ as
   submodules). gh CLI portable in tools-cache\gh (signed in by the user; scopes repo, workflow). Push with

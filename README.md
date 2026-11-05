@@ -5,7 +5,7 @@ static recompilation: the game's own program is translated into C and compiled f
 Every app gets the same Android layer: touch pad (or a controller), a side menu with 12 save-state slots,
 disc change, restart and display options, a movable FPS counter, software or GPU (OpenGL ES) rendering.
 
-**Private repository. It contains no game code or data.** Each person builds the apps on their own PC from
+**Public repository. It contains no game code or data.** Each person builds the apps on their own PC from
 **their own discs**. Never share the APKs you build: they contain the game's translated program.
 
 | Repository | What |
