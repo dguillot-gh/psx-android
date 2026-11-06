@@ -67,23 +67,43 @@ that made them**: after an app update, make new ones.
 
 ### Games
 
-| Game | `-Game` name | Discs | Status (Pixel 8) |
-|---|---|---|---|
-| Einhänder | `einhander_recomp` | 1 | plays, 60 fps |
-| Final Fantasy VII | `ff7_recomp` | 3 | plays, ~50 fps in the opening |
-| Parasite Eve | `parasite_eve_recomp` | 1 tested | plays, 60 fps |
-| Parasite Eve II | `parasite_eve2_recomp` | 1 tested | plays; no sound yet |
-| Persona | `persona_recomp` | 1 | plays, 60 fps |
-| Persona 2: Eternal Punishment | `persona2_recomp` | 1 | plays, ~60 fps |
-| Policenauts (Japanese) | `policenauts_recomp` | 2 | plays with the touch trackpad; slow opening |
-| Tomba! | `tomba_recomp` | 1 | plays, 60 fps |
-| Tomba! 2 | `tomba2_recomp` | 1 | plays; GPU renderer recommended |
-| ATV Racers | `atvracers_recomp` | 1 | builds; save states work |
-| Crash Bandicoot 2 | `crash2_recomp` | 1 | builds; first boot not checked |
-| Crash Bandicoot 3: Warped | `crash3_recomp` | 1 | builds; first boot not checked |
-| LEGO Island 2 | `legoisland2_recomp` | 1 | builds; first boot not checked |
-| Gran Turismo 2 (Simulation) | `gt2sim_recomp` | 1 | **not working yet** |
-| Legend of Dragoon, Gex 1-3, GT2 Arcade | see `games/` | | set up, not built yet |
+Each game with a repository builds on its own: clone it with `--recurse-submodules`, put your discs in a
+`discs\` folder next to it and run `scripts\RUN-ALL.ps1 -Install` (its README has the details and the disc
+SHA-1s it accepts). With this repository's `go.ps1`, the `-Game` name is the game's folder name, for example
+`tomba_recomp`.
+
+**Status**: *playable* = played past the title on a phone; *boots* = reaches its title or intro, gameplay not
+checked yet; *in progress* = known problems before it plays. **Speed** is the engine's own counter
+(**1.00x = full speed**). LG V30 figures are from 2026-11-05 on the current engine, GPU renderer with the render
+thread and idle skip on; Pixel 8 figures for the older games are from 2026-10-07/09 on the earlier engine.
+
+| Game | Repository | Status | Pixel 8 (2023) | LG V30 (2017) |
+|---|---|---|---|---|
+| Final Fantasy VII (Shinra Archaeology Cut) | [ff7-android](https://github.com/dguillot-gh/ff7-android) | playable | 1.00x, 60 fps | 0.8-0.9x (field, battles) |
+| Mizzurna Falls - The Chilling Cut | [mizzurnafallsthechillingcut-android](https://github.com/dguillot-gh/mizzurnafallsthechillingcut-android) | in progress | plays (older engine) | boots on the older engine; needs a Sony BIOS backend on the current one |
+| Parasite Eve | [parasite-eve-android](https://github.com/dguillot-gh/parasite-eve-android) | playable | 60 fps | 0.25x (title) |
+| Parasite Eve II | [parasite-eve2-android](https://github.com/dguillot-gh/parasite-eve2-android) | playable | plays; no sound | boots (not measured) |
+| Persona | [persona-android](https://github.com/dguillot-gh/persona-android) | playable | 60 fps | 0.47-0.49x (boot screens) |
+| Persona 2: Eternal Punishment | [persona2-android](https://github.com/dguillot-gh/persona2-android) | playable | ~60 fps | boots (not measured) |
+| Policenauts (English patch) | [policenauts-android](https://github.com/dguillot-gh/policenauts-android) | playable | plays (touch trackpad); ~30 fps opening | boots (not measured) |
+| Racing Lagoon (English patch) | [racinglagoon-android](https://github.com/dguillot-gh/racinglagoon-android) | in progress | builds; not play-tested | not tested |
+| Tomba! | [tomba-android](https://github.com/dguillot-gh/tomba-android) | playable | 60 fps | 0.40-0.43x (title, intro) |
+| Tomba! 2: The Evil Swine Return | [tomba2-android](https://github.com/dguillot-gh/tomba2-android) | playable | plays; GPU renderer recommended | not measured |
+| Einhänder | no repository yet | playable | 60 fps | 0.41-0.76x (title, attract) |
+| Xenogears | no repository yet | playable | not tested | 0.96-1.03x in the field; ~0.33x in dark/fog scenes |
+| Jersey Devil | no repository yet | playable | not tested | 0.35x (tutorial room) |
+| Castlevania: Symphony of the Night | no repository yet | boots | not tested | 0.79-1.00x (boot, attract) |
+| Final Fantasy VIII | no repository yet | boots | not tested | 0.47x (intro) |
+| Madden NFL 2002 | no repository yet | boots | not tested | 0.33-0.54x (boot, title) |
+| Chrono Cross | no repository yet | boots | not tested | 0.17-0.20x (title) |
+| Vagrant Story | no repository yet | boots | not tested | boots (not measured) |
+| NASCAR Rumble | no repository yet | boots | not tested | boots (not measured) |
+| Legend of Legaia | no repository yet | boots | not tested | boots (not measured) |
+| MediEvil | no repository yet | boots | not tested | boots (not measured) |
+| Tekken 3 | no repository yet | boots | not tested | intro movie (not measured) |
+
+Set up but not booting or not checked yet: ATV Racers, Crash Bandicoot 2 and 3, LEGO Island 2, Gran Turismo 2,
+Gex 1-3, Legend of Dragoon, Soul Reaver, retail Final Fantasy VII.
 
 ### If something goes wrong
 - `go.ps1` ends with a **SUMMARY**; each failure names a log file. Logs are in `C:\psx\android-recomp\<game>\`.
