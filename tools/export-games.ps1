@@ -1,12 +1,12 @@
-# Copy each game's OWN files (what makes the recomp work, nothing from the disc) into games\<name>\,
-# for the git repository. Hand-written, 2026-10-07. Run again after changing a game's config or seeds.
+# Copy each game's OWN files (what makes the recomp work, nothing from the disc) into games\<name>\, a LOCAL
+# working copy (git-ignored). Hand-written, 2026-10-07. Run again after changing a game's config or seeds.
+# Since 2026-11-06 each game's public repository is a standalone build (dguillot-gh/<name>-android, the
+# ff7-android layout) and is not made from this folder; games\ is no longer a set of submodules.
 #   pwsh -File tools\export-games.ps1                   (every game)
 #   pwsh -File tools\export-games.ps1 -Game x_recomp    (one game; "Add game" on the build PC uses this)
 # Taken from recomps\<name>\ (and recomps-later\<name>\) : game.toml, seeds\, tools\, aot_exclude.txt, extra_discs.txt, README.md,
 #   REFERENCE.md, VERSION, CMakeLists.txt, build.ps1, catalog_identity.json, disc_probe.json.
-# Taken from android-recomp\<name>\build-android-overlays\ : play_captures.json (code ADDRESSES the game
-#   ran while being played; lets the pre-compile on another PC cover the same code).
-# NEVER taken: disc\, saves\, memcard-import\, generated\, psxrecomp\, build-release\, launcher_assets\
+# NEVER taken: play_captures.json (it carries the game's code, bytes_b64), disc\, saves\, memcard-import\, generated\, psxrecomp\, build-release\, launcher_assets\
 #   (box art), assets\, probe.log, anything else.
 param([string]$Game = "")
 . (Join-Path $PSScriptRoot "paths.ps1")
@@ -43,8 +43,8 @@ $later = Join-Path $DriveRoot "recomps-later"
 foreach ($g in @(Get-ChildItem $recomps -Directory) + @(Get-ChildItem $later -Directory -ErrorAction SilentlyContinue)) {
     if ($Game -and $g.Name -ne $Game) { continue }
     $dest = Join-Path $out $g.Name
-    # A fresh copy each time (our own export). games\<name> is the game's own git repository (a submodule):
-    # keep its .git link and .gitignore, replace everything else.
+    # A fresh copy each time (our own export). An old checkout here may still have its .git link and
+    # .gitignore from when games\ held submodules: keep those, replace everything else.
     New-Item -ItemType Directory -Force $dest | Out-Null
     Get-ChildItem $dest -Force | Where-Object { $_.Name -notin ".git", ".gitignore" } | Remove-Item -Recurse -Force
     foreach ($f in $files) {
@@ -68,8 +68,6 @@ foreach ($g in @(Get-ChildItem $recomps -Directory) + @(Get-ChildItem $later -Di
         $t2 = [regex]::Replace($t, '"[A-Za-z]:(?:/|\\{1,2})[^"]*(?:/|\\)([^"/\\]+)"', '"$1"')
         if ($t2 -ne $t) { Set-Content $p $t2 -Encoding utf8NoBOM -NoNewline }
     }
-    $cap = Join-Path $work "$($g.Name)\build-android-overlays\play_captures.json"
-    if (Test-Path $cap) { Copy-Item $cap (Join-Path $dest "play_captures.json") }
 
     # README for this game's own repository. An upstream README (a game first published by
     # someone else) is kept beside it as UPSTREAM-README.md.
@@ -91,7 +89,7 @@ foreach ($g in @(Get-ChildItem $recomps -Directory) + @(Get-ChildItem $later -Di
         "# $title for Android (psxrecomp)",
         "",
         "This repository holds only what makes **$title** run as a native Android app: its",
-        "configuration, code entry points (seeds), helper tools and play captures. **It contains no game",
+        "configuration, code entry points (seeds) and helper tools. **It contains no game",
         "code or data.** You build the app on your own PC from **your own disc**; nothing from the disc is",
         "ever uploaded.",
         "",
@@ -126,7 +124,6 @@ foreach ($g in @(Get-ChildItem $recomps -Directory) + @(Get-ChildItem $later -Di
         "|---|---|",
         "| ``game.toml`` | the game's configuration (boot program, memory layout, controller, video) |",
         "| ``seeds/`` | code entry points the recompiler starts from |",
-        "| ``play_captures.json`` | addresses of code the game loaded while being played; makes the speed pre-compile cover it |",
         "| ``tools/``, ``aot_exclude.txt`` | game-specific helpers / pieces kept off the pre-compile (when present) |"
     )
     Set-Content $readme $md -Encoding utf8NoBOM

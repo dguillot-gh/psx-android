@@ -43,9 +43,8 @@ function Git-Must([string]$dir) {
 
 if (-not $NoUpdate) {
     # --- 1a. Scripts --------------------------------------------------------------------------------------
-    Step "Updating the games list (psx-android submodules)"
-    # (The scripts themselves were updated by the workflow's step before this one.)
-    Git-Must $tools submodule update -q --init --force -- games
+    # (The scripts themselves were updated by the workflow's step before this one.) psx-android no longer
+    # holds the games as submodules (2026-11-06): games\ is this PC's own local copy, if it has one.
     # --- 1b. Engine -----------------------------------------------------------------------------------------
     Step "Updating the engine (psxrecomp-android, branch android)"
     $fw = Join-Path $DriveRoot "framework\psxrecomp"
@@ -64,10 +63,10 @@ if (-not $NoUpdate) {
     $after = (& git -C $fw rev-parse HEAD).Trim()
     if ($before -ne $after) { Write-Host "Engine: $($before.Substring(0,8)) -> $($after.Substring(0,8))" }
     else { Write-Host "Engine: already up to date ($($after.Substring(0,8)))" }
-    # --- 1c. Each game's setup: games\<name> (its repository) -> recomps\<name> --------------------------
+    # --- 1c. Each game's setup: games\<name> (local copy, when this PC has one) -> recomps\<name> --------
     # The reverse of export-games.ps1. game.toml keeps this PC's disc file names (disc / discs lines).
-    Step "Updating each game's setup from its repository"
-    foreach ($src in Get-ChildItem (Join-Path $tools "games") -Directory) {
+    Step "Updating each game's setup from games\"
+    foreach ($src in Get-ChildItem (Join-Path $tools "games") -Directory -ErrorAction SilentlyContinue) {
         $dest = Join-Path $recomps $src.Name
         if (-not (Test-Path (Join-Path $dest "game.toml"))) { continue }   # not on this PC (no disc here)
         $theirs = Join-Path $src.FullName "game.toml"
