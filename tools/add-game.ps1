@@ -6,7 +6,7 @@
 #  2. The files read from the disc (e.g. SLUS_xxx.xx) go next to the .cue/.bin on the NAS, so that folder is
 #     what ci-build.ps1 copies in for a build; the local disc copy is then removed (little disk on the VM).
 #  3. export-games.ps1 -Game: games\<game> = the game's own files (no disc, no PC paths), checked.
-#  4. Creates the PUBLIC repository dguillot-gh/<short>-android, pushes it, adds it to psx-android (games\<game>).
+#  4. (No GitHub repository is made here any more: game repositories are standalone, see step 4 below.)
 #  5. Adds the game to the Build APK list (.github/workflows/build-apk.yml in psx-android-builds).
 # -DryRun: steps 1-3 and a preview of 5; nothing on GitHub. A later run without -DryRun carries on from there,
 # and so does a run after one that stopped halfway (recomps\<game>\.add-game-pending). Any other existing
@@ -187,35 +187,12 @@ if ($DryRun) {
 }
 
 # --- 4. GitHub: the game's public repository, and psx-android's link to it -----------------------------------
-Step "4. GitHub repository $owner/$repoName (public: no game code in it)"
-if (-not $repoExists) {
-    & $gh repo create "$owner/$repoName" --public --description "Android port setup for $Game (psxrecomp). No game code: build it from your own disc with psx-android."
-    if ($LASTEXITCODE -ne 0) { Fail "could not create github.com/$owner/$repoName (see above)." }
-}
-if (-not (Test-Path (Join-Path $exp ".git"))) {
-    Git-Must $exp init -q -b main
-    Git-Must $exp remote add origin $repoUrl
-}
-Git-Must $exp add -A
-& git -C $exp diff --cached --quiet
-if ($LASTEXITCODE -ne 0) { Git-Must $exp commit -q -m "$Game`: config, seeds (no game content)" }
-Git-Must $exp push -q origin HEAD:main
-Write-Host "OK: https://github.com/$owner/$repoName"
-
-if (-not $inPsxAndroid) {
-    Step "Adding it to psx-android (games\$Game)"
-    Git-Must $tools fetch -q origin main
-    Git-Must $tools merge -q --ff-only origin/main
-    Git-Must $tools submodule add -q --force $repoUrl "games/$Game"
-    Git-Must $tools commit -q -m "Add $Game (games/$Game, from the Add game button)" -- .gitmodules "games/$Game"
-    & git -C $tools -c credential.helper= -c $cred push -q origin HEAD:main
-    if ($LASTEXITCODE -ne 0) {
-        # Leave this copy exactly as on GitHub, so the next build's update works; the next Add game run retries.
-        & git -C $tools reset -q --hard origin/main
-        Fail "could not push psx-android (see above). Press Add game again to retry."
-    }
-    Write-Host "OK: psx-android has games\$Game"
-}
+# Since 2026-11-06 a game's public repository is a standalone build made from the ff7-android layout (by
+# hand, once the game plays), not pushed from games\$Game, and psx-android no longer links games as
+# submodules. So this step creates nothing on GitHub: games\$Game stays a local, git-ignored setup copy.
+Step "4. GitHub repository: not made here"
+Write-Host "  games\$Game is ready locally. A public repository ($owner/$repoName) is made separately, from the"
+Write-Host "  ff7-android layout, once the game plays; it never gets play captures."
 
 # --- 5. The Build APK list ------------------------------------------------------------------------------------
 Step "5. Build APK's game list (psx-android-builds)"

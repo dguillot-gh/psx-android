@@ -32,3 +32,6 @@ __pycache__/
 # PSX Manager build output (the published exe lives at <drive>\PSX-Manager, outside the repo)
 gui/PsxManager/bin/
 gui/PsxManager/obj/
+
+# Game setups are local working copies now; each game has its own standalone repository.
+/games/

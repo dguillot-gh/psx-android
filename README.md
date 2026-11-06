@@ -10,9 +10,9 @@ disc change, restart and display options, a movable FPS counter, software or GPU
 
 | Repository | What |
 |---|---|
-| **psx-android** (this one) | build scripts, notes, and every game under `games/` (one repository each) |
+| **psx-android** (this one) | build scripts and notes, and the list of games (see **Games** below) |
 | [psxrecomp-android](https://github.com/dguillot-gh/psxrecomp-android) | the engine, in `framework/`: mstan/psxrecomp + our Android work (branch `android`) |
-| `games/<name>` | one repository per game: its config, seeds, tools and play captures, plus its own README |
+| `dguillot-gh/<name>-android` | one standalone repository per game: clone it, add your discs, run its `scripts\RUN-ALL.ps1` (no play captures: they hold game code) |
 
 ---
 
@@ -28,8 +28,10 @@ disc change, restart and display options, a movable FPS counter, software or GPU
 ### 1. Get the repositories (once)
 1. Make a folder with a short path, for example `C:\psx`.
 2. In GitHub Desktop: **File > Clone repository > dguillot-gh/psx-android**, local path `C:\psx\psx-android`.
-   GitHub Desktop also fetches the engine and every game (they are "submodules"). With plain git:
+   GitHub Desktop also fetches the engine (a "submodule"). With plain git:
    `git clone --recursive https://github.com/dguillot-gh/psx-android.git`
+   The games are not inside this repository. To build one game, the simplest way is its own repository
+   (see **Games**); `go.ps1` below sets a game up on this PC from your disc with `tools\new-recomp.ps1`.
 
 Everything the scripts download or build goes **next to** the repository (`C:\psx\tools-cache`,
 `C:\psx\recomps`, `C:\psx\android-recomp`), never into Windows.

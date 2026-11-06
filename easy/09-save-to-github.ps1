@@ -1,5 +1,5 @@
-# Save everything to GitHub (your private repositories, account dguillot-gh): each game's setup, the scripts
-# and notes, and the engine. Uploads only what's in git: never discs, saves, APKs or keys (see .gitignore).
+# Save to GitHub (account dguillot-gh): the scripts and notes, and the engine. Game repositories are not
+# touched (see step 1). Uploads only what's in git: never discs, saves, APKs or keys (see .gitignore).
 # Needs the GitHub CLI signed in once on this PC: tools-cache\gh\bin\gh.exe auth login --web
 . (Join-Path $PSScriptRoot "_common.ps1")
 Title "Save to GitHub"
@@ -23,25 +23,11 @@ function GitCommitAll([string]$dir, [string]$msg) {
 }
 $stamp = Get-Date -Format "yyyy-MM-dd HH:mm"
 
-# 1. Refresh each game's folder (games\<name>, its own repository) from recomps\ and the latest play captures.
-Info "1. Refreshing the games' setup files..."
-& $Pwsh -NoProfile -File (Join-Path $Tools "tools\export-games.ps1") | Out-Null
-foreach ($d in Get-ChildItem (Join-Path $Tools "games") -Directory) {
-    if (-not (Test-Path (Join-Path $d.FullName ".git"))) {
-        $n = (($d.Name -replace '_recomp$', '') -replace '_', '-') + "-android"
-        Warn "  $($d.Name) has no GitHub repository yet; creating private dguillot-gh/$n"
-        # Same ignore rules as every game repository (copied from an existing one).
-        $ig = Get-ChildItem (Join-Path $Tools "games") -Directory | ForEach-Object { Join-Path $_.FullName ".gitignore" } | Where-Object { Test-Path $_ } | Select-Object -First 1
-        if ($ig) { Copy-Item $ig (Join-Path $d.FullName ".gitignore") }
-        & git -C $d.FullName init -q -b main
-        & $Gh repo create "dguillot-gh/$n" --private | Out-Null
-        & git -C $d.FullName remote add origin "https://github.com/dguillot-gh/$n.git"
-        GitCommitAll $d.FullName "$($d.Name): config, seeds, tools, play captures (no game content)" | Out-Null
-        GitPush $d.FullName "HEAD:main"
-        & git -C $Tools -c credential.helper= -c $cred submodule add -q --force "https://github.com/dguillot-gh/$n.git" "games/$($d.Name)" 2>&1 | Out-Null
-    }
-    if (GitCommitAll $d.FullName "Update $($d.Name) setup ($stamp)") { GitPush $d.FullName "HEAD:main"; Good "  updated $($d.Name)" }
-}
+# 1. The games: not saved from here any more. Since 2026-11-06 each game's public repository
+#    (dguillot-gh/<name>-android) is a standalone build made from the ff7-android layout, with no play
+#    captures (they carry the game's code). games\ is a local, git-ignored working copy: nothing in it is
+#    committed or pushed, and no game repository is created from it.
+Info "1. Games: each has its own repository, updated on its own (nothing pushed from games\)."
 # 2. The engine (framework\psxrecomp, branch android) and its tag.
 Info "2. Engine (psxrecomp-android)..."
 $fw = Join-Path $DriveRoot "framework\psxrecomp"
